@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        /* 디스코드 스타일의 다크 테마 CSS */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #313338; color: #dbdee1; display: flex; height: 100vh; }
+        
+        /* 좌측 채널 목록 영역 */
+        #sidebar { width: 250px; background-color: #2b2d31; padding: 20px; box-sizing: border-box; border-right: 1px solid #1e1f22; }
+        h2 { margin-top: 0; color: white; font-size: 16px; text-transform: uppercase; }
+        
+        /* 중앙 채팅 영역 */
+        #main-chat { flex-grow: 1; display: flex; flex-direction: column; }
+        
+        /* 메시지가 표시되는 공간 */
+        #chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { background-color: #2b2d31; padding: 10px 15px; border-radius: 8px; align-self: flex-start; max-width: 80%; line-height: 1.4; }
+        
+        /* 입력창 영역 */
+        #form-container { padding: 20px; background-color: #313338; }
+        #chat-form { display: flex; gap: 10px; background-color: #383a40; padding: 10px; border-radius: 8px; }
+        #msg-input { flex-grow: 1; background: none; border: none; color: white; outline: none; font-size: 16px; }
+        button { background-color: #5865F2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #4752C4; }
+    </style>
+</head>
+<body>
+    <!-- 좌측 사이드바 -->
+    <div id="sidebar">
+        <h2># Free Chat</h2>
+        <p style="font-size: 14px; color: #949ba4;">Anonymous</p>
+    </div>
+
+    <!-- 우측 메인 채팅창 -->
+    <div id="main-chat">
+        <div id="chat-messages"></div>
+        <div id="form-container">
+            <form id="chat-form" action="">
+                <input id="msg-input" autocomplete="off" placeholder="Enter Message" required />
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Socket.io 라이브러리 불러오기 -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({
+    transports: ['websocket']}); // 서버와 연결
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('msg-input');
+        const messages = document.getElementById('chat-messages');
+
+        // 1. 전송 버튼을 누르면 서버로 메시지 전송
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // 새로고침 방지
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                input.value = ''; // 전송 후 입력창 비우기
+            }
+        });
+
+        // 2. 서버에서 새 메시지가 도착하면 화면에 추가
+        socket.on('chat message', function(msg) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.textContent = msg;
+            messages.appendChild(messageElement);
+            
+            // 새 메시지가 오면 스크롤을 맨 아래로 자동 이동
+            messages.scrollTop = messages.scrollHeight;
+        });
+    </script>
+</body>
+</html>
