@@ -3,631 +3,420 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  
-  <script src="/socket.io/socket.io.js"></script>
-
+  <title>미니 디스코드 채팅</title>
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Noto Sans KR', sans-serif;
     }
-@media screen and (max-width: 768px) {
-    /* 스마트폰 화면일 때 전체 레이아웃을 세로(위아래) 정렬로 변경 */
+
     body {
-      flex-direction: column !important;
+      display: flex;
       height: 100vh;
-      overflow: hidden;
-    }
-
-    /* 좌측 사이드바를 상단에 가로로 배치하거나 크기 조절 */
-    #sidebar {
-      width: 100% !important;
-      height: 50px !important;
-      flex-direction: row !important;
-      align-items: center;
-      overflow-x: auto;
-      flex-shrink: 0;
-    }
-
-    /* 채팅창 영역이 스마트폰 남은 화면을 꽉 채우도록 설정 */
-    #chat-container {
-      width: 100% !important;
-      height: calc(100vh - 50px) !important;
-      flex: 1;
-    }
-  }
-    body {
+      margin: 0;
       background-color: #313338;
       color: #dbdee1;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-family: 'Noto Sans KR', sans-serif, system-ui;
     }
 
-    /* --- 로그인 / 회원가입 창 --- */
-    #auth-container {
+    /* 좌측 사이드바 (채널 목록 및 프로필) */
+    #sidebar {
+      width: 240px;
       background-color: #2b2d31;
-      padding: 32px;
-      border-radius: 8px;
-      width: 400px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    }
-
-    #auth-container h2 {
-      color: #f2f3f5;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .input-group {
-      margin-bottom: 16px;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 12px;
-      color: #b5bac1;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 4px;
-      border: none;
-      background-color: #1e1f22;
-      color: #f2f3f5;
-      font-size: 14px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 4px;
-      background-color: #5865f2;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background-color 0.2s;
-    }
-
-    .btn:hover {
-      background-color: #4752c4;
-    }
-
-    .toggle-text {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 13px;
-      color: #949ba4;
-    }
-
-    .toggle-text span {
-      color: #00a8fc;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    /* --- 메인 채팅 화면 --- */
-    #chat-container {
-      display: none;
-      width: 100%;
-      height: 100vh;
+      display: flex;
       flex-direction: column;
+      padding: 15px 10px;
+      flex-shrink: 0;
+      border-right: 1px solid #1e1f22;
+    }
+
+    .sidebar-header {
+      font-weight: bold;
+      font-size: 1.1rem;
+      padding-bottom: 15px;
+      color: #f2f3f5;
+      border-bottom: 1px solid #35363c;
+      margin-bottom: 15px;
+    }
+
+    .channel-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .channel-item {
+      padding: 10px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      color: #949ba4;
+      font-weight: 500;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .channel-item:hover {
+      background-color: #35373c;
+      color: #dbdee1;
+    }
+
+    .channel-item.active {
+      background-color: #404249;
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .user-profile {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid #35363c;
+    }
+
+    .user-profile label {
+      font-size: 0.8rem;
+      color: #949ba4;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .user-profile input {
+      width: 100%;
+      padding: 8px;
+      background-color: #1e1f22;
+      border: 1px solid #383a40;
+      border-radius: 4px;
+      color: #f2f3f5;
+      outline: none;
+    }
+
+    /* 우측 채팅 컨테이너 */
+    #chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #313338;
+      height: 100vh;
+    }
+
+    #chat-header {
+      height: 48px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #1f2023;
+      font-weight: bold;
+      font-size: 1rem;
+      color: #f2f3f5;
       background-color: #313338;
     }
 
-    .chat-header {
-      height: 48px;
-      background-color: #2b2d31;
-      border-bottom: 2px solid #1e1f22;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      color: #f2f3f5;
-      font-weight: bold;
-    }
-
-    .user-info {
-      font-size: 14px;
-      color: #b5bac1;
-      margin-right: 12px;
-    }
-
-    .logout-btn {
-      background-color: #da373c;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    /* 메시지 목록 */
     #messages {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 12px;
     }
 
-    /* 📅 날짜 구분선 스타일 */
-    .date-divider {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 20px 0 12px 0;
-      position: relative;
-    }
-
-    .date-divider::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      width: 100%;
-      height: 1px;
-      background-color: #3f4147;
-      z-index: 1;
-    }
-
-    .date-divider span {
-      position: relative;
-      z-index: 2;
-      background-color: #313338;
-      padding: 2px 12px;
-      color: #949ba4;
-      font-size: 12px;
-      font-weight: 600;
-      border-radius: 12px;
-      border: 1px solid #3f4147;
-    }
-
+    /* 메시지 풍선 및 스타일 */
     .message-item {
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      width: 100%;
+      flex-direction: column;
+      max-width: 80%;
+      animation: fadeIn 0.15s ease-in;
     }
 
-    .message-item.new-sender {
-      margin-top: 12px; /* 작성자가 달라질 때 상단 여백 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #5865f2;
+    .message-item.others {
+      align-self: flex-start;
+    }
+
+    .message-item.mine {
+      align-self: flex-end;
+    }
+
+    .message-info {
+      font-size: 0.8rem;
+      color: #949ba4;
+      margin-bottom: 4px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      flex-shrink: 0;
+      gap: 8px;
+      align-items: baseline;
     }
 
-    .avatar-spacer {
-      width: 40px;
-      flex-shrink: 0;
+    .message-item.mine .message-info {
+      justify-content: flex-end;
+    }
+
+    .message-nickname {
+      font-weight: 600;
+      color: #f2f3f5;
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: #80848e;
     }
 
     .message-content {
-      display: flex;
-      flex-direction: column;
-      max-width: 70%;
-    }
-
-    .message-header {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-
-    .nickname {
-      color: #f2f3f5;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .timestamp {
-      color: #949ba4;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
-    .message-body-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
-    }
-
-    .bubble {
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-break: break-all;
-    }
-
-    .other-bubble {
-      background-color: #2b2d31;
+      background-color: #383a40;
       color: #dbdee1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      word-break: break-word;
+      line-height: 1.4;
     }
 
-    .my-message {
-      justify-content: flex-end;
-      align-items: flex-end;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .my-bubble {
+    .message-item.mine .message-content {
       background-color: #5865f2;
       color: #ffffff;
-      border-radius: 12px 12px 2px 12px;
-      max-width: 70%;
+      border-bottom-right-radius: 2px;
     }
 
-    .input-container {
-      padding: 0 16px 24px 16px;
+    .message-item.others .message-content {
+      border-bottom-left-radius: 2px;
+    }
+
+    #message-form {
+      padding: 15px 20px;
       background-color: #313338;
     }
 
-    #chat-form {
+    .input-wrapper {
       display: flex;
       background-color: #383a40;
       border-radius: 8px;
-      padding: 0 16px;
+      padding: 0 10px;
       align-items: center;
     }
 
-    #chat-input {
+    #message-input {
       flex: 1;
-      padding: 12px 0;
-      border: none;
+      padding: 12px;
       background: transparent;
+      border: none;
       color: #f2f3f5;
-      font-size: 14px;
+      font-size: 0.95rem;
       outline: none;
     }
 
     #send-btn {
-      background: none;
+      background-color: #5865f2;
+      color: white;
       border: none;
-      color: #5865f2;
+      padding: 8px 16px;
+      border-radius: 4px;
       font-weight: bold;
       cursor: pointer;
-      padding-left: 12px;
+      transition: background-color 0.15s;
+    }
+
+    #send-btn:hover {
+      background-color: #4752c4;
+    }
+
+    /* 🟢 스마트폰 최적화 미디어 쿼리 (화면 폭 768px 이하) */
+    @media screen and (max-width: 768px) {
+      body {
+        flex-direction: column !important;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #sidebar {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 120px;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        overflow-x: auto;
+      }
+
+      .sidebar-header {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        font-size: 0.9rem;
+      }
+
+      .channel-list {
+        display: flex;
+        gap: 8px;
+      }
+
+      .user-profile {
+        margin-top: 0;
+        border-top: none;
+        padding-top: 0;
+        width: 120px;
+      }
+
+      #chat-container {
+        width: 100% !important;
+        height: calc(100vh - 120px) !important;
+        flex: 1;
+      }
+
+      #messages {
+        padding: 12px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div id="auth-container">
-    <h2 id="auth-title">로그인</h2>
+  <div id="sidebar">
+    <div class="sidebar-header">💬 디스코드 서버</div>
     
-    <div class="input-group" id="nickname-group" style="display: none;">
-      <label>닉네임</label>
-      <input type="text" id="nickname-input" placeholder="사용할 닉네임을 입력하세요">
-    </div>
+    <ul class="channel-list">
+      <li class="channel-item active" data-channel="general"># 일반-채팅</li>
+      <li class="channel-item" data-channel="anonymous"># 완전-익명</li>
+    </ul>
 
-    <div class="input-group">
-      <label>이메일</label>
-      <input type="email" id="email-input" placeholder="name@example.com">
-    </div>
-
-    <div class="input-group">
-      <label>비밀번호</label>
-      <input type="password" id="password-input" placeholder="비밀번호 (6자리 이상)">
-    </div>
-
-    <button class="btn" id="auth-btn">로그인</button>
-
-    <div class="toggle-text">
-      <span id="toggle-auth">계정이 없으신가요? 회원가입</span>
+    <div class="user-profile">
+      <label for="nickname-input">내 닉네임</label>
+      <input type="text" id="nickname-input" value="유저1" placeholder="닉네임 입력">
     </div>
   </div>
 
   <div id="chat-container">
-    <div class="chat-header">
-      <div># 일반 채팅방</div>
-      <div>
-        <span class="user-info" id="current-user-info"></span>
-        <button class="logout-btn" id="logout-btn">로그아웃</button>
-      </div>
-    </div>
+    <div id="chat-header"># 일반-채팅</div>
 
     <div id="messages"></div>
 
-    <div class="input-container">
-      <form id="chat-form">
-        <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+    <form id="message-form">
+      <div class="input-wrapper">
+        <input type="text" id="message-input" placeholder="메시지를 입력하세요..." autocomplete="off" required>
         <button type="submit" id="send-btn">전송</button>
-      </form>
-    </div>
+      </div>
+    </form>
   </div>
 
-<script>
-    const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
     const socket = io();
 
-    // DOM 요소 보관
-    const authContainer = document.getElementById('auth-container');
-    const chatContainer = document.getElementById('chat-container');
-    const authTitle = document.getElementById('auth-title');
-    const nicknameGroup = document.getElementById('nickname-group');
-    const nicknameInput = document.getElementById('nickname-input');
-    const emailInput = document.getElementById('email-input');
-    const passwordInput = document.getElementById('password-input');
-    const authBtn = document.getElementById('auth-btn');
-    const toggleAuth = document.getElementById('toggle-auth');
-    const currentUserInfo = document.getElementById('current-user-info');
-    const logoutBtn = document.getElementById('logout-btn');
+    let currentChannel = 'general';
+    let mySocketId = null;
 
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
     const messages = document.getElementById('messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const nicknameInput = document.getElementById('nickname-input');
+    const chatHeader = document.getElementById('chat-header');
+    const channelItems = document.querySelectorAll('.channel-item');
 
-    let isSignUpMode = false;
-    let currentUserNickname = "";
-    
-    // 🟢 서버에서 받은 과거 대화 내역을 잠시 보관할 변수 추가
-    let storedHistory = []; 
-
-    // 실시간 메시지 연속 그룹화/시각/날짜 추적 변수
-    let lastDate = null;
-    let lastSender = null;
-    let lastMsgTime = null;
-    let lastMsgElement = null;
-
-    // 로그인/회원가입 모드 전환
-    toggleAuth.addEventListener('click', () => {
-      isSignUpMode = !isSignUpMode;
-      if (isSignUpMode) {
-        authTitle.innerText = '회원가입';
-        nicknameGroup.style.display = 'block';
-        authBtn.innerText = '회원가입 완료';
-        toggleAuth.innerText = '이미 계정이 있으신가요? 로그인';
-      } else {
-        authTitle.innerText = '로그인';
-        nicknameGroup.style.display = 'none';
-        authBtn.innerText = '로그인';
-        toggleAuth.innerText = '계정이 없으신가요? 회원가입';
-      }
+    // 접속 완료 시 소켓 고유 ID 기억
+    socket.on('connect', () => {
+      mySocketId = socket.id;
     });
 
-    // 로그인 및 회원가입
-    authBtn.addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      const nickname = nicknameInput.value.trim();
-
-      if (!email || !password) {
-        alert('이메일과 비밀번호를 입력해 주세요.');
-        return;
-      }
-
-      try {
-        if (isSignUpMode) {
-          if (!nickname) {
-            alert('닉네임을 입력해 주세요.');
-            return;
-          }
-          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-          await userCredential.user.updateProfile({ displayName: nickname });
-          await auth.currentUser.reload();
-          currentUserNickname = auth.currentUser.displayName || nickname;
-          alert('회원가입 성공!');
-        } else {
-          await auth.signInWithEmailAndPassword(email, password);
+    // 🟢 1. 과거 대화 내역 받기 (Firestore에서 로드)
+    socket.on('chat history', (data) => {
+      if (data.channel === currentChannel) {
+        messages.innerHTML = ''; // 화면 비우기
+        if (data.history && Array.isArray(data.history)) {
+          data.history.forEach((msg) => {
+            renderMessage(msg);
+          });
         }
-      } catch (error) {
-        alert('오류 발생: ' + error.message);
+        scrollToBottom();
       }
     });
 
-    // 🟢 과거 대화 내역을 화면에 그리는 함수 분리
-    function renderAllHistory() {
-      messages.innerHTML = ''; 
-      resetTrackingVars();
-      storedHistory.forEach((msg) => {
+    // 🟢 2. 실시간 메시지 수신
+    socket.on('chat message', (msg) => {
+      if (msg.channel === currentChannel) {
         renderMessage(msg);
-      });
-    }
-
-    // 로그인 상태 감지
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        currentUserNickname = user.displayName || currentUserNickname || '익명';
-        currentUserInfo.innerText = `${currentUserNickname}님 환영합니다!`;
-        
-        authContainer.style.display = 'none';
-        chatContainer.style.display = 'flex';
-
-        // 🟢 닉네임이 확인된 직후에, 보관해둔 대화 내역이 있다면 화면에 그리기
-        if (storedHistory.length > 0) {
-          renderAllHistory();
-        }
-
-      } else {
-        authContainer.style.display = 'block';
-        chatContainer.style.display = 'none';
-        currentUserNickname = "";
-        resetTrackingVars();
+        scrollToBottom();
       }
     });
 
-    logoutBtn.addEventListener('click', () => {
-      auth.signOut();
-    });
-
-    function resetTrackingVars() {
-      lastDate = null;
-      lastSender = null;
-      lastMsgTime = null;
-      lastMsgElement = null;
-    }
-
-    // 현재 분 단위 시각 
-    function getCurrentTime() {
-      const now = new Date();
-      return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    // 현재 날짜 구하기 
-    function getFullDate() {
-      const now = new Date();
-      return now.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
-      });
-    }
-
-    // 메시지 전송 이벤트
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const msg = chatInput.value.trim();
+    // 화면에 메시지 말풍선 생성 함수
+    function renderMessage(msg) {
+      const msgDiv = document.createElement('div');
       
-      if (msg && currentUserNickname) {
-        socket.emit('chat message', {
-          nickname: currentUserNickname,
-          text: msg,
-          time: getCurrentTime(),
-          fullDate: getFullDate()
-        });
-        chatInput.value = '';
-      }
-    });
+      // 내 메시지 여부 판별 (socketId가 같거나 닉네임이 같으면 내가 보낸 메시지)
+      const isMine = msg.senderId ? (msg.senderId === mySocketId) : (msg.nickname === nicknameInput.value.trim());
 
-    // 📅 날짜 구분선 DOM 생성
-    function renderDateDivider(dateStr) {
-      const divider = document.createElement('div');
-      divider.className = 'date-divider';
-      divider.innerHTML = `<span>${dateStr}</span>`;
-      messages.appendChild(divider);
+      msgDiv.classList.add('message-item');
+      msgDiv.classList.add(isMine ? 'mine' : 'others');
+
+      // 익명 채널 전용 닉네임 표시 로직
+      const displayNickname = (currentChannel === 'anonymous') ? (isMine ? '나 (익명)' : '익명') : (msg.nickname || '익명');
+
+      msgDiv.innerHTML = `
+        <div class="message-info">
+          <span class="message-nickname">${escapeHtml(displayNickname)}</span>
+          <span class="message-time">${msg.time || ''}</span>
+        </div>
+        <div class="message-content">${escapeHtml(msg.text)}</div>
+      `;
+
+      messages.appendChild(msgDiv);
     }
 
-    // 💬 단일 메시지 렌더링 함수
-    function renderMessage(data) {
-      const msgDate = data.fullDate || getFullDate();
+    // 보안을 위한 HTML 태그 변환 함수
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
 
-      if (lastDate !== msgDate) {
-        renderDateDivider(msgDate);
-        lastDate = msgDate;
-        lastSender = null;
-        lastMsgTime = null;
-        lastMsgElement = null;
-      }
-
-      const isMe = (data.nickname === currentUserNickname);
-      const isSameSender = (lastSender === data.nickname);
-      const isSameTime = (lastMsgTime === data.time);
-
-      if (isSameSender && isSameTime && lastMsgElement) {
-        const prevTimestamp = lastMsgElement.querySelector('.timestamp');
-        if (prevTimestamp) {
-          prevTimestamp.textContent = '';
-        }
-      }
-
-      const item = document.createElement('div');
-
-      if (isMe) {
-        item.className = 'message-item my-message';
-        item.innerHTML = `
-          <span class="timestamp">${data.time}</span>
-          <div class="bubble my-bubble">${escapeHtml(data.text)}</div>
-        `;
-      } else {
-        const initial = data.nickname ? data.nickname.charAt(0) : '?';
-
-        if (isSameSender) {
-          item.className = 'message-item continuous';
-          item.innerHTML = `
-            <div class="avatar-spacer"></div>
-            <div class="message-content">
-              <div class="message-body-row">
-                <div class="bubble other-bubble">${escapeHtml(data.text)}</div>
-                <span class="timestamp">${data.time}</span>
-              </div>
-            </div>
-          `;
-        } else {
-          item.className = 'message-item new-sender';
-          item.innerHTML = `
-            <div class="avatar">${initial}</div>
-            <div class="message-content">
-              <div class="message-header">
-                <span class="nickname">${data.nickname}</span>
-              </div>
-              <div class="message-body-row">
-                <div class="bubble other-bubble">${escapeHtml(data.text)}</div>
-                <span class="timestamp">${data.time}</span>
-              </div>
-            </div>
-          `;
-        }
-      }
-
-      lastSender = data.nickname;
-      lastMsgTime = data.time;
-      lastMsgElement = item;
-
-      messages.appendChild(item);
+    function scrollToBottom() {
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // 📜 1. 서버에서 받은 이전 대화 내역을 일단 '보관'만 하기
-    socket.on('chat history', (history) => {
-      storedHistory = history;
-      
-      // 만약 이미 로그인(닉네임 세팅)이 완료된 상태라면 즉시 그리기
-      if (currentUserNickname) {
-        renderAllHistory();
-      }
+    // 메시지 전송 이벤트
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const timeStr = `${hours}:${minutes}`;
+
+      const msgData = {
+        channel: currentChannel,
+        nickname: nicknameInput.value.trim() || '익명',
+        text: text,
+        time: timeStr,
+        fullDate: now.toLocaleDateString('ko-KR')
+      };
+
+      socket.emit('chat message', msgData);
+
+      messageInput.value = '';
+      messageInput.focus();
     });
 
-    // 📩 2. 실시간 단일 메시지 수신
-    socket.on('chat message', (data) => {
-      // 내가 보낸 메시지인 경우 저장된 히스토리에도 추가해 두기 (새로고침 대비)
-      storedHistory.push(data);
-      renderMessage(data);
-    });
+    // 채널 클릭 이동 이벤트
+    channelItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const selectedChannel = item.getAttribute('data-channel');
+        if (selectedChannel === currentChannel) return;
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.innerText = text;
-      return div.innerHTML;
-    }
+        channelItems.forEach(ch => ch.classList.remove('active'));
+        item.classList.add('active');
+
+        currentChannel = selectedChannel;
+        chatHeader.textContent = item.textContent;
+
+        messages.innerHTML = '';
+        socket.emit('join channel', currentChannel);
+      });
+    });
   </script>
 </body>
 </html>
