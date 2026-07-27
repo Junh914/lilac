@@ -4,8 +4,12 @@ const { Server } = require('socket.io');
 const admin = require('firebase-admin');
 const path = require('path');
 
-// 1. Firebase Admin SDK 연결
-const serviceAccount = require('./firebase-key.json');
+// 환경 변수에 담긴 JSON 문자열을 객체로 변환하여 사용
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
