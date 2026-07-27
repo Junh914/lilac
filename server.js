@@ -4,29 +4,64 @@ const { Server } = require('socket.io');
 const admin = require('firebase-admin');
 const path = require('path');
 
-// 1. Firebase Admin SDK 연결 (서비스 계정 키 파일)
+// 1. Firebase Admin SDK 연결
 const serviceAccount = require('./firebase-key.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const db = admin.firestore(); // Firestore 데이터베이스 인스턴스
+const db = admin.firestore();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// public 폴더 내 정적 파일(index.html 등) 제공
+// public 폴더 내 정적 파일 제공
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🟢 Firestore에서 해당 채널의 과거 대화 내역을 읽어 유저에게 전송하는 함수
+// 🟢 [기능 추가] 3개월이 초과된 오래된 메시지 자동 삭제 (DB 영구저장 한도)
+async function cleanupOldMessages() {
+  try {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    // 3개월 이전 데이터 조회
+    const snapshot = await db.collection('messages')
+      .where('timestamp', '<', admin.firestore.Timestamp.fromDate(threeMonthsAgo))
+      .get();
+
+    if (snapshot.empty) return;
+
+    // 일괄 삭제 (Batch Delete)
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    console.log(`🧹 3개월이 초과된 오래된 메시지 ${snapshot.size}개를 삭제했습니다.`);
+  } catch (error) {
+    console.error('오래된 메시지 삭제 중 오류 발생:', error);
+  }
+}
+
+// 서버 실행 시 1회 청소 진행 후, 24시간마다 반복 실행되도록 예약
+cleanupOldMessages();
+setInterval(cleanupOldMessages, 24 * 60 * 60 * 1000); // 24시간
+
+
+// 🟢 Firestore에서 해당 채널의 '최근 3개월' 대화 내역만 읽어오는 함수
 async function sendChannelHistory(socket, channel) {
   try {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    // 최근 3개월 데이터만 생성 시간순으로 오름차순 정렬하여 불러오기
     const snapshot = await db.collection('messages')
       .where('channel', '==', channel)
+      .where('timestamp', '>=', admin.firestore.Timestamp.fromDate(threeMonthsAgo))
       .orderBy('timestamp', 'asc')
-      .limit(100) // 최근 100개 메시지
       .get();
 
     const history = snapshot.docs.map(doc => {
@@ -34,7 +69,9 @@ async function sendChannelHistory(socket, channel) {
       return {
         id: doc.id,
         channel: data.channel,
+        uid: data.uid,
         nickname: data.nickname,
+        profileImg: data.profileImg,
         text: data.text,
         time: data.time,
         fullDate: data.fullDate,
@@ -42,7 +79,6 @@ async function sendChannelHistory(socket, channel) {
       };
     });
 
-    // 접속한 유저 단 한 명에게만 과거 내역 전달
     socket.emit('chat history', { channel, history });
   } catch (error) {
     console.error(`[${channel}] 대화 내역 불러오기 실패:`, error);
@@ -53,14 +89,9 @@ async function sendChannelHistory(socket, channel) {
 io.on('connection', (socket) => {
   console.log('유저 접속 완료:', socket.id);
 
-  // 접속 즉시 기본 채널('general') 입장 및 대화 내역 전송
-  const defaultChannel = 'general';
-  socket.join(defaultChannel);
-  sendChannelHistory(socket, defaultChannel);
-
-  // 🟢 1. 유저가 채널을 이동했을 때 처리
+  // 🟢 1. 유저 채널 이동 및 대화 내역 요청
+  // (Race Condition 방지를 위해 클라이언트가 '내 정보'를 확인한 직후 호출함)
   socket.on('join channel', (channel) => {
-    // 기존에 있던 방 퇴장 (자신의 socket.id 방은 제외)
     socket.rooms.forEach((room) => {
       if (room !== socket.id) socket.leave(room);
     });
@@ -68,7 +99,6 @@ io.on('connection', (socket) => {
     socket.join(channel);
     console.log(`유저[${socket.id}]가 [${channel}] 채널로 이동했습니다.`);
 
-    // 해당 채널의 과거 대화 불러오기
     sendChannelHistory(socket, channel);
   });
 
@@ -78,19 +108,19 @@ io.on('connection', (socket) => {
 
     const messageData = {
       channel: channel,
+      uid: data.uid,
       nickname: data.nickname || '익명',
+      profileImg: data.profileImg || null,
       text: data.text,
       time: data.time,
       fullDate: data.fullDate,
-      senderId: socket.id, // 보낸 사람 소켓 ID 저장 (익명 구분을 위함)
+      senderId: socket.id,
       timestamp: admin.firestore.FieldValue.serverTimestamp() // 정렬용 서버 시각
     };
 
     try {
-      // Firebase Firestore에 저장 (서버가 리부팅되어도 유지됨)
       const docRef = await db.collection('messages').add(messageData);
 
-      // 해당 채널에 접속 중인 모든 사람에게 실시간 전파
       io.to(channel).emit('chat message', {
         id: docRef.id,
         ...data,
@@ -106,8 +136,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Render 클라우드용 자동 포트 감지 (기본 3000번)
+// 클라우드 호스팅용 자동 포트 감지
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`서버가 http://localhost:${PORT} 에서 정상 작동 중입니다.`);
+  console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
 });
