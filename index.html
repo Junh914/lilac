@@ -339,8 +339,8 @@
     </div>
   </div>
 
-  <script>
-   const firebaseConfig = {
+<script>
+    const firebaseConfig = {
   apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
   authDomain: "lilac-13935.firebaseapp.com",
   projectId: "lilac-13935",
@@ -354,7 +354,7 @@
     const auth = firebase.auth();
     const socket = io();
 
-    // DOM 요소
+    // DOM 요소 보관
     const authContainer = document.getElementById('auth-container');
     const chatContainer = document.getElementById('chat-container');
     const authTitle = document.getElementById('auth-title');
@@ -373,6 +373,9 @@
 
     let isSignUpMode = false;
     let currentUserNickname = "";
+    
+    // 🟢 서버에서 받은 과거 대화 내역을 잠시 보관할 변수 추가
+    let storedHistory = []; 
 
     // 실시간 메시지 연속 그룹화/시각/날짜 추적 변수
     let lastDate = null;
@@ -426,6 +429,15 @@
       }
     });
 
+    // 🟢 과거 대화 내역을 화면에 그리는 함수 분리
+    function renderAllHistory() {
+      messages.innerHTML = ''; 
+      resetTrackingVars();
+      storedHistory.forEach((msg) => {
+        renderMessage(msg);
+      });
+    }
+
     // 로그인 상태 감지
     auth.onAuthStateChanged((user) => {
       if (user) {
@@ -434,12 +446,16 @@
         
         authContainer.style.display = 'none';
         chatContainer.style.display = 'flex';
+
+        // 🟢 닉네임이 확인된 직후에, 보관해둔 대화 내역이 있다면 화면에 그리기
+        if (storedHistory.length > 0) {
+          renderAllHistory();
+        }
+
       } else {
         authContainer.style.display = 'block';
         chatContainer.style.display = 'none';
         currentUserNickname = "";
-        
-        // 상태 리셋
         resetTrackingVars();
       }
     });
@@ -455,13 +471,13 @@
       lastMsgElement = null;
     }
 
-    // 현재 분 단위 시각 (예: "오후 12:02")
+    // 현재 분 단위 시각 
     function getCurrentTime() {
       const now = new Date();
       return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // 현재 날짜 구하기 (예: "2026년 7월 28일 화요일")
+    // 현재 날짜 구하기 
     function getFullDate() {
       const now = new Date();
       return now.toLocaleDateString('ko-KR', {
@@ -500,11 +516,9 @@
     function renderMessage(data) {
       const msgDate = data.fullDate || getFullDate();
 
-      // 1️⃣ 날짜가 변경되었거나 첫 메시지일 경우 날짜 구분선 출력
       if (lastDate !== msgDate) {
         renderDateDivider(msgDate);
         lastDate = msgDate;
-        // 날짜가 바뀌었으므로 작성자 그룹 초기화
         lastSender = null;
         lastMsgTime = null;
         lastMsgElement = null;
@@ -514,7 +528,6 @@
       const isSameSender = (lastSender === data.nickname);
       const isSameTime = (lastMsgTime === data.time);
 
-      // 2️⃣ 동일인 + 동일 분(Minute)인 경우 이전 메시지 시각 삭제
       if (isSameSender && isSameTime && lastMsgElement) {
         const prevTimestamp = lastMsgElement.querySelector('.timestamp');
         if (prevTimestamp) {
@@ -525,18 +538,15 @@
       const item = document.createElement('div');
 
       if (isMe) {
-        // 내가 보낸 메시지
         item.className = 'message-item my-message';
         item.innerHTML = `
           <span class="timestamp">${data.time}</span>
           <div class="bubble my-bubble">${escapeHtml(data.text)}</div>
         `;
       } else {
-        // 상대방이 보낸 메시지
         const initial = data.nickname ? data.nickname.charAt(0) : '?';
 
         if (isSameSender) {
-          // 연속 메시지 (아바타/닉네임 생략)
           item.className = 'message-item continuous';
           item.innerHTML = `
             <div class="avatar-spacer"></div>
@@ -548,7 +558,6 @@
             </div>
           `;
         } else {
-          // 신규 작성자 메시지
           item.className = 'message-item new-sender';
           item.innerHTML = `
             <div class="avatar">${initial}</div>
@@ -565,7 +574,6 @@
         }
       }
 
-      // 상태 갱신
       lastSender = data.nickname;
       lastMsgTime = data.time;
       lastMsgElement = item;
@@ -574,18 +582,20 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // 📜 1. 서버에 저장되어 있던 이전 대화 목록 불러오기
+    // 📜 1. 서버에서 받은 이전 대화 내역을 일단 '보관'만 하기
     socket.on('chat history', (history) => {
-      messages.innerHTML = ''; // 초기화
-      resetTrackingVars();
+      storedHistory = history;
       
-      history.forEach((msg) => {
-        renderMessage(msg);
-      });
+      // 만약 이미 로그인(닉네임 세팅)이 완료된 상태라면 즉시 그리기
+      if (currentUserNickname) {
+        renderAllHistory();
+      }
     });
 
     // 📩 2. 실시간 단일 메시지 수신
     socket.on('chat message', (data) => {
+      // 내가 보낸 메시지인 경우 저장된 히스토리에도 추가해 두기 (새로고침 대비)
+      storedHistory.push(data);
       renderMessage(data);
     });
 
