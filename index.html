@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>미니 디스코드 채팅방</title>
+  <title>Chat</title>
   
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -17,7 +17,31 @@
       padding: 0;
       font-family: 'Noto Sans KR', sans-serif;
     }
+@media screen and (max-width: 768px) {
+    /* 스마트폰 화면일 때 전체 레이아웃을 세로(위아래) 정렬로 변경 */
+    body {
+      flex-direction: column !important;
+      height: 100vh;
+      overflow: hidden;
+    }
 
+    /* 좌측 사이드바를 상단에 가로로 배치하거나 크기 조절 */
+    #sidebar {
+      width: 100% !important;
+      height: 50px !important;
+      flex-direction: row !important;
+      align-items: center;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    /* 채팅창 영역이 스마트폰 남은 화면을 꽉 채우도록 설정 */
+    #chat-container {
+      width: 100% !important;
+      height: calc(100vh - 50px) !important;
+      flex: 1;
+    }
+  }
     body {
       background-color: #313338;
       color: #dbdee1;
