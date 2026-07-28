@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>314</title>
+  <title>Chat</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -13,7 +13,7 @@
       display: flex; justify-content: center; align-items: center;
     }
 
-    /* ---------------- 로그인 / 회원가입 화면 ---------------- */
+    /* 인증(로그인) 화면 */
     #auth-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       width: 100%; height: 100vh; background-color: #313338;
@@ -33,250 +33,175 @@
       background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; font-size: 14px;
     }
     .auth-box button#auth-action-btn:hover { background-color: #4752c4; }
-
-    /* 회원가입 전환용 작은 글씨 링크 스타일 */
     .toggle-link-text {
-      color: #949ba4; font-size: 11px; cursor: pointer; text-decoration: underline;
-      margin-top: 6px; user-select: none; display: inline-block;
+      color: #949ba4; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 6px;
     }
     .toggle-link-text:hover { color: #00a8fc; }
 
-    .signup-only { display: none; }
-
-    /* ---------------- 채팅 화면 ---------------- */
+    /* 메인 채팅 화면 */
     #chat-container {
-      display: none; width: 100%; height: 100vh; background-color: #313338;
-      flex-direction: column;
+      display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: column;
     }
     header {
       height: 60px; background-color: #2b2d31; border-bottom: 1px solid #1f2023;
       display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
       font-weight: bold; font-size: 18px; color: #f2f3f5;
     }
-    .header-right {
-      display: flex; align-items: center; gap: 12px;
-    }
-    #user-nickname-display {
-      font-size: 14px; color: #00a8fc; font-weight: normal;
-    }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    #user-nickname-display { font-size: 14px; color: #00a8fc; font-weight: normal; }
     #logout-btn {
-      background-color: #ed4245; color: white; border: none; padding: 6px 12px;
-      border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
-    }
-    #logout-btn:hover { background-color: #c03537; }
-
-    .chat-main {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
-    }
-    #messages {
-      flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+      background-color: #ed4245; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;
     }
 
-    /* 메시지 구조 */
-    .message-row {
-      display: flex; align-items: flex-end; gap: 10px; max-width: 75%;
-    }
-    /* 본인 메시지: 왼쪽 정렬 (아바타/닉네임 없음, 시각만 표시) */
-    .message-row.mine {
-      align-self: flex-start; flex-direction: row;
-    }
-    /* 남이 보낸 메시지: 오른쪽 정렬 (아바타, 닉네임, 시각 표시) */
-    .message-row.other {
-      align-self: flex-end; flex-direction: row-reverse;
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+    /* 날짜 구분선 */
+    .date-divider {
+      text-align: center; font-size: 12px; color: #949ba4; margin: 15px 0; font-weight: bold;
     }
 
-    /* 아바타 스타일 */
-    .avatar {
-      width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: bold; color: white; font-size: 15px; flex-shrink: 0;
-    }
+    /* 카톡형 메시지 디자인 */
+    .message-row { display: flex; align-items: flex-end; gap: 8px; max-width: 75%; }
+    
+    /* 본인 메시지 (오른쪽 배치) */
+    .message-row.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .message-row.mine .message-content { align-items: flex-end; }
+    .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-radius: 12px; border-bottom-right-radius: 2px; }
+    
+    /* 상대방 메시지 (왼쪽 배치) */
+    .message-row.other { align-self: flex-start; }
+    .message-row.other .message-content { align-items: flex-start; }
+    .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-radius: 12px; border-bottom-left-radius: 2px; }
 
-    .message-content {
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .message-row.other .message-content { align-items: flex-end; }
-    .message-row.mine .message-content { align-items: flex-start; }
+    /* 연속된 메시지일 때 여백 줄이기 및 프로필 숨기기 */
+    .message-row.consecutive { margin-top: -6px; }
+    .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
+    .message-row.other.consecutive .message-header { display: none; }
 
-    .message-header {
-      display: flex; gap: 8px; font-size: 12px; color: #949ba4; align-items: center;
-    }
-    .nickname { font-weight: bold; color: #f2f3f5; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 15px; flex-shrink: 0; }
+    .message-content { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
+    .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; }
+    .message-bubble { padding: 10px 14px; word-break: break-all; font-size: 14px; line-height: 1.4; }
+    
+    /* 시간 표시 */
+    .time-container { display: flex; align-items: flex-end; }
+    .timestamp { font-size: 10px; color: #949ba4; margin: 0 4px 2px 4px; white-space: nowrap; }
 
-    .message-bubble {
-      padding: 10px 14px; border-radius: 12px; word-break: break-all; font-size: 14px; line-height: 1.4;
-    }
-    /* 본인 말풍선 색상 (왼쪽) */
-    .message-row.mine .message-bubble {
-      background-color: #5865f2; color: white; border-bottom-left-radius: 2px;
-    }
-    /* 남이 보낸 말풍선 색상 (오른쪽) */
-    .message-row.other .message-bubble {
-      background-color: #2b2d31; color: #dbdee1; border-bottom-right-radius: 2px;
-    }
+    #message-form { padding: 20px; background-color: #313338; display: flex; gap: 10px; }
+    #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
+    #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    .timestamp {
-      font-size: 10px; color: #949ba4; margin-top: 2px;
+    /* 스마트폰 최적화 */
+    @media (max-width: 768px) {
+      .message-row { max-width: 90%; }
     }
-
-    /* 입력창 영역 */
-    #message-form {
-      padding: 20px; background-color: #313338; display: flex; gap: 10px;
-    }
-    #message-input {
-      flex: 1; padding: 12px; border-radius: 8px; border: none;
-      background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none;
-    }
-    #send-btn {
-      padding: 0 20px; border-radius: 8px; border: none;
-      background-color: #5865f2; color: white; font-weight: bold; cursor: pointer;
-    }
-    #send-btn:hover { background-color: #4752c4; }
   </style>
 </head>
 <body>
 
-  <!-- 1. 로그인 / 회원가입 화면 -->
   <div id="auth-container">
     <div class="auth-box">
       <h2 id="auth-title">로그인</h2>
       <input type="email" id="email-input" placeholder="이메일 입력">
-      <input type="text" id="nickname-input" class="signup-only" placeholder="사용할 닉네임 입력">
+      <input type="text" id="nickname-input" style="display: none;" placeholder="사용할 닉네임 입력">
       <input type="password" id="password-input" placeholder="비밀번호 입력">
       <button type="button" id="auth-action-btn">로그인</button>
-      
-      <!-- 버튼이 아닌 글자 형태로 작게 배치된 회원가입 전환 링크 -->
-      <div>
-        <span class="toggle-link-text" id="toggle-mode-btn">계정이 없으신가요? 회원가입</span>
-      </div>
+      <div><span class="toggle-link-text" id="toggle-mode-btn">계정이 없으신가요? 회원가입</span></div>
     </div>
   </div>
 
-  <!-- 2. 채팅 화면 -->
   <div id="chat-container">
     <header>
-      <span>자유채팅방</span>
+      <span>💬 자유채팅방</span>
       <div class="header-right">
-        <span id="user-nickname-display">닉네임: </span>
+        <span id="user-nickname-display"></span>
         <button id="logout-btn">로그아웃</button>
       </div>
     </header>
     <div class="chat-main">
       <div id="messages"></div>
       <form id="message-form">
-        <input type="text" id="message-input" placeholder="자유채팅방에 메시지 보내기..." autocomplete="off">
+        <input type="text" id="message-input" placeholder="메시지 보내기..." autocomplete="off">
         <button type="submit" id="send-btn">전송</button>
       </form>
     </div>
   </div>
 
-  <!-- Socket.io 및 Firebase 클라이언트 SDK 연동 -->
   <script src="/socket.io/socket.io.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword, 
-      updateProfile,
-      onAuthStateChanged, 
-      signOut 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    // 🔴 본인의 Firebase 설정값으로 변경 필수!
     const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+      apiKey: "본인의_API_키",
+      authDomain: "프로젝트_ID.firebaseapp.com",
+      projectId: "프로젝트_ID",
+      storageBucket: "프로젝트_ID.appspot.com",
+      messagingSenderId: "센더_ID",
+      appId: "앱_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const socket = io();
+    // Render 서버 환경 문제 우회를 위해 웹소켓 전용 설정
+    const socket = io({ transports: ['websocket'] });
 
     let isLoginMode = true;
     let currentUser = null;
 
+    // 카톡형 렌더링 상태 변수
+    let lastDateStr = null;
+    let lastSenderId = null;
+    let lastMinuteStr = null;
+    let lastTimeElem = null;
+
     const authContainer = document.getElementById('auth-container');
     const chatContainer = document.getElementById('chat-container');
-    const authTitle = document.getElementById('auth-title');
-    const authActionBtn = document.getElementById('auth-action-btn');
-    const toggleModeBtn = document.getElementById('toggle-mode-btn');
-    const emailInput = document.getElementById('email-input');
-    const nicknameInput = document.getElementById('nickname-input');
-    const passwordInput = document.getElementById('password-input');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userNicknameDisplay = document.getElementById('user-nickname-display');
     const messages = document.getElementById('messages');
-
-    // 닉네임 고정 매핑 함수
-    function getUserNickname(user) {
-      if (!user) return '익명';
-      if (user.email === 'hecarivlrt@gmail.com') return 'test 1';
-      if (user.email === 'junh914@naver.com') return 'Admin';
-      return user.displayName || user.email.split('@')[0];
-    }
-
-    // 모드 전환 (로그인 ↔ 회원가입 글자 클릭 시)
-    toggleModeBtn.addEventListener('click', () => {
+    
+    // 모드 전환
+    document.getElementById('toggle-mode-btn').addEventListener('click', () => {
       isLoginMode = !isLoginMode;
-      if (isLoginMode) {
-        authTitle.innerText = "로그인";
-        authActionBtn.innerText = "로그인";
-        toggleModeBtn.innerText = "계정이 없으신가요? 회원가입";
-        nicknameInput.style.display = 'none';
-      } else {
-        authTitle.innerText = "회원가입";
-        authActionBtn.innerText = "회원가입 완료";
-        toggleModeBtn.innerText = "이미 계정이 있으신가요? 로그인";
-        nicknameInput.style.display = 'block';
-      }
+      document.getElementById('auth-title').innerText = isLoginMode ? "로그인" : "회원가입";
+      document.getElementById('auth-action-btn').innerText = isLoginMode ? "로그인" : "회원가입 완료";
+      document.getElementById('toggle-mode-btn').innerText = isLoginMode ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인";
+      document.getElementById('nickname-input').style.display = isLoginMode ? "none" : "block";
     });
 
-    // 로그인 / 회원가입 실행 (버튼 클릭 이벤트)
-    authActionBtn.addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      const nickname = nicknameInput.value.trim();
+    // 로그인 / 회원가입 실행
+    document.getElementById('auth-action-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email-input').value.trim();
+      const pw = document.getElementById('password-input').value.trim();
+      const nick = document.getElementById('nickname-input').value.trim();
 
-      if (!email || !password || (!isLoginMode && !nickname)) {
-        alert('모든 입력란을 채워주세요.');
-        return;
-      }
+      if (!email || !pw || (!isLoginMode && !nick)) return alert('모든 필드를 입력해주세요.');
 
       try {
         if (isLoginMode) {
-          await signInWithEmailAndPassword(auth, email, password);
+          await signInWithEmailAndPassword(auth, email, pw);
         } else {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          await updateProfile(userCredential.user, { displayName: nickname });
-          alert('회원가입이 완료되었습니다!');
+          const cred = await createUserWithEmailAndPassword(auth, email, pw);
+          await updateProfile(cred.user, { displayName: nick });
+          await auth.currentUser.reload(); // 즉시 닉네임 반영
+          alert('가입 완료!');
         }
-      } catch (error) {
-        alert('인증 오류: ' + error.message);
-      }
+      } catch (e) { alert('오류: ' + e.message); }
     });
 
     // 로그아웃
-    logoutBtn.addEventListener('click', () => {
-      signOut(auth);
-    });
+    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // Firebase 인증 상태 감지
+    // 인증 상태 관리
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
         authContainer.style.display = 'none';
         chatContainer.style.display = 'flex';
-
-        // 헤더 닉네임 표시
-        const currentNick = getUserNickname(user);
-        userNicknameDisplay.innerText = `닉네임: ${currentNick}`;
-
-        socket.emit('join channel', 'general');
+        document.getElementById('user-nickname-display').innerText = `접속됨: ${user.displayName || '익명'}`;
+        
+        socket.emit('join channel', 'general'); // 채널 접속 및 내역 요청
       } else {
         currentUser = null;
         chatContainer.style.display = 'none';
@@ -293,60 +218,73 @@
       if (!text || !currentUser) return;
 
       const now = new Date();
+      const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      const dateStr = now.toLocaleDateString('ko-KR', dateOptions);
       const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-      const userNick = getUserNickname(currentUser);
 
       socket.emit('chat message', {
         channel: 'general',
         uid: currentUser.uid,
-        nickname: userNick,
+        nickname: currentUser.displayName || '익명',
         text: text,
+        date: dateStr,
         time: timeStr
       });
-
       input.value = '';
     });
 
-    // 이전 대화 내역 수신
+    // 소켓 수신 (과거 대화 복구)
     socket.on('chat history', (data) => {
       messages.innerHTML = '';
-      if (data.history) {
+      lastDateStr = null; lastSenderId = null; lastMinuteStr = null; lastTimeElem = null;
+      if (data && data.history) {
         data.history.forEach(msg => appendMessage(msg));
       }
     });
 
-    // 실시간 메시지 수신
-    socket.on('chat message', (msg) => {
-      appendMessage(msg);
-    });
+    // 소켓 수신 (실시간 메시지)
+    socket.on('chat message', (msg) => appendMessage(msg));
 
+    // 렌더링 엔진 (날짜 및 시간 그룹화 처리)
     function appendMessage(msg) {
-      const isMine = currentUser && msg.uid === currentUser.uid;
+      if (!currentUser) return; // 닉네임 로딩 대기 에러 방지
 
+      const isMine = (msg.uid === currentUser.uid);
+
+      // 1. 날짜가 바뀌면 구분선 추가
+      if (msg.date !== lastDateStr) {
+        const divider = document.createElement('div');
+        divider.className = 'date-divider';
+        divider.innerText = `--- ${msg.date} ---`;
+        messages.appendChild(divider);
+        lastDateStr = msg.date;
+        lastSenderId = null; // 날짜 바뀌면 연속 판정 리셋
+      }
+
+      const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time);
+      
       const row = document.createElement('div');
-      row.className = `message-row ${isMine ? 'mine' : 'other'}`;
+      row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
 
-      const content = document.createElement('div');
-      content.className = 'message-content';
-
+      // 남이 보낸 메시지는 아바타 공간 생성
       if (!isMine) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
         avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
         row.appendChild(avatar);
+      }
 
+      const timeContainer = document.createElement('div');
+      timeContainer.className = 'time-container';
+
+      const content = document.createElement('div');
+      content.className = 'message-content';
+
+      // 헤더(닉네임) 생성 (남이 보냈고 & 연속 메시지가 아닐 때만)
+      if (!isMine && !isConsecutive) {
         const header = document.createElement('div');
         header.className = 'message-header';
-        
-        const nickSpan = document.createElement('span');
-        nickSpan.className = 'nickname';
-        nickSpan.innerText = msg.nickname;
-        
-        const timeSpan = document.createElement('span');
-        timeSpan.innerText = msg.time;
-
-        header.appendChild(nickSpan);
-        header.appendChild(timeSpan);
+        header.innerText = msg.nickname;
         content.appendChild(header);
       }
 
@@ -355,16 +293,32 @@
       bubble.innerText = msg.text;
       content.appendChild(bubble);
 
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'timestamp';
+      timeDiv.innerText = msg.time;
+
+      // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
+      if (isConsecutive && lastTimeElem) {
+        lastTimeElem.style.display = 'none';
+      }
+      
+      // 내 메시지는 [시간][말풍선], 남의 메시지는 [말풍선][시간] 구조로 삽입
       if (isMine) {
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'timestamp';
-        timeDiv.innerText = msg.time;
-        content.appendChild(timeDiv);
+        timeContainer.appendChild(timeDiv);
+        timeContainer.appendChild(content);
+      } else {
+        timeContainer.appendChild(content);
+        timeContainer.appendChild(timeDiv);
       }
 
-      row.appendChild(content);
+      row.appendChild(timeContainer);
       messages.appendChild(row);
       messages.scrollTop = messages.scrollHeight;
+
+      // 상태 업데이트
+      lastTimeElem = timeDiv;
+      lastSenderId = msg.uid;
+      lastMinuteStr = msg.time;
     }
   </script>
 </body>
