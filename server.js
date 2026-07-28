@@ -11,6 +11,10 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 const db = admin.firestore();
 
 const app = express();
@@ -19,6 +23,10 @@ const io = new Server(server);
 
 // public 폴더 내 정적 파일 제공
 app.use(express.static(path.join(__dirname, 'public')));
+// 루트 경로('/')로 접속했을 때 index.html 보내주기
+app.get('/', (req.get ? req.get : (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+}));
 
 // 🟢 3개월이 초과된 오래된 메시지 자동 삭제 함수
 async function cleanupOldMessages() {
