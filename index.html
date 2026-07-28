@@ -47,10 +47,17 @@
       display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: row;
     }
 
-    .sidebar {
-      width: 240px; min-width: 180px; max-width: 400px;
-      background-color: #2b2d31; display: flex; flex-direction: column;
-      border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
+   .sidebar {
+      /* 기존의 고정 너비(240px) 대신 flex 비율을 적용합니다 */
+      flex: 6.4; 
+      min-width: 180px; 
+      max-width: 400px;
+      background-color: #2b2d31; 
+      display: flex; 
+      flex-direction: column;
+      border-right: 1px solid #1f2023; 
+      position: relative; 
+      flex-shrink: 0;
     }
     
     .sidebar-resizer {
@@ -96,10 +103,13 @@
     .settings-icon-btn:hover { background-color: #35373c; }
     .settings-icon-btn:hover img { filter: brightness(1); }
 
-    .chat-area { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    header {
-      height: 60px; background-color: #313338; border-bottom: 1px solid #1f2023;
-      display: flex; align-items: center; padding: 0 20px; font-weight: bold; font-size: 16px; color: #f2f3f5;
+    .chat-area { 
+      /* 나머지 채팅 영역이 30 비율을 차지하도록 설정합니다 */
+      flex: 30; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh; 
+      overflow: hidden; 
     }
 
     .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
