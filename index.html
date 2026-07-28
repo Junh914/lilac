@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>미니 디스코드</title>
+  <title>Chat</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -14,18 +14,18 @@
       user-select: none;
     }
 
-    /* 밝고 더 굵어진 커스텀 스크롤바 설정 */
+    /* 밝고 굵기 9.5px의 커스텀 스크롤바 설정 */
     ::-webkit-scrollbar {
       width: 9.5px;
       height: 9.5px;
     }
     ::-webkit-scrollbar-track {
       background: #2b2d31;
-      border-radius: 6px;
+      border-radius: 5px;
     }
     ::-webkit-scrollbar-thumb {
       background: #80848e; /* 밝은 회색 */
-      border-radius: 6px;
+      border-radius: 5px;
     }
     ::-webkit-scrollbar-thumb:hover {
       background: #b5bac1; /* 마우스 호버 시 더 밝게 */
@@ -59,9 +59,8 @@
       display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: row;
     }
 
-    /* 사이드바와 채팅 영역 기본 비율 (6.4 : 30) */
     .sidebar {
-      width: calc(100% * 6.4 / 36.4); min-width: 180px; max-width: 400px;
+      width: 240px; min-width: 180px; max-width: 400px;
       background-color: #2b2d31; display: flex; flex-direction: column;
       border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
     }
@@ -98,10 +97,17 @@
     .user-display-name { font-size: 14px; font-weight: bold; color: #f2f3f5; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
     .user-status { font-size: 11px; color: #23a55a; }
     
+    /* 업로드한 이미지로 변경된 설정 아이콘 버튼 스타일 */
     .settings-icon-btn {
-      background: none; border: none; color: #b5bac1; cursor: pointer; font-size: 18px; padding: 6px; border-radius: 4px; flex-shrink: 0;
+      background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-    .settings-icon-btn:hover { background-color: #35373c; color: #f2f3f5; }
+    .settings-icon-btn img {
+      width: 18px; height: 18px; object-fit: contain; filter: brightness(0.8);
+      transition: filter 0.2s;
+    }
+    .settings-icon-btn:hover { background-color: #35373c; }
+    .settings-icon-btn:hover img { filter: brightness(1); }
 
     .chat-area { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     header {
@@ -180,10 +186,11 @@
       padding: 12px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 15px; outline: none;
     }
     
-    /* 파란색 점선을 제거하고 실선 테두리로 변경한 이미지 선택 버튼 */
+    /* 점선이 제거된 실선 테두리 이미지 선택 버튼 */
     .file-upload-label {
       display: inline-block; padding: 14px; background-color: #2b2d31; border: 1px solid #3f444b;
       border-radius: 4px; text-align: center; color: #dbdee1; cursor: pointer; font-size: 14px;
+      outline: none;
     }
     .file-upload-label:hover { background-color: #35373c; border-color: #5865f2; }
 
@@ -208,7 +215,7 @@
 
   <div id="chat-container">
     <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">🌟 미니 디스코드</div>
+      <div class="sidebar-header">Lilac</div>
       <div class="channel-list">
         <div class="channel-item active"># 자유채팅방</div>
       </div>
@@ -220,7 +227,9 @@
             <span class="user-status">온라인</span>
           </div>
         </div>
-        <button class="settings-icon-btn" id="open-settings-btn" title="설정">⚙️</button>
+        <button class="settings-icon-btn" id="open-settings-btn" title="설정">
+          <img src="setting-icon.png" alt="설정">
+        </button>
       </div>
       <div class="sidebar-resizer" id="sidebar-resizer"></div>
     </div>
@@ -230,7 +239,7 @@
       <div class="chat-main">
         <div id="messages"></div>
         <form id="message-form">
-          <input type="text" id="message-input" placeholder="#자유채팅방에 메시지 보내기..." autocomplete="off">
+          <input type="text" id="message-input" placeholder="#자유채팅방에 메시지 보내기" autocomplete="off">
           <button type="submit" id="send-btn">전송</button>
         </form>
       </div>
@@ -245,7 +254,7 @@
       
       <div class="settings-group">
         <label>프로필 사진 파일 선택</label>
-        <label for="setting-file-input" class="file-upload-label" id="file-label-text">컴퓨터에서 이미지 선택...</label>
+        <label for="setting-file-input" class="file-upload-label" id="file-label-text">컴퓨터에서 이미지 선택..</label>
         <input type="file" id="setting-file-input" accept="image/*" style="display: none;">
       </div>
 
@@ -255,7 +264,7 @@
       </div>
 
       <div class="settings-group">
-        <label>새 비밀번호 변경 (변경시에만 입력)</label>
+        <label>비밀번호 변경(변경시에만 입력)</label>
         <input type="password" id="setting-password-input" placeholder="새 비밀번호 입력">
       </div>
 
@@ -350,7 +359,7 @@
       if (!currentUser) return;
       document.getElementById('setting-nickname-input').value = currentUser.displayName || '';
       document.getElementById('setting-password-input').value = '';
-      fileLabelText.innerText = currentUser.photoURL ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택...";
+      fileLabelText.innerText = currentUser.photoURL ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택";
       selectedImageBase64 = currentUser.photoURL || null;
       settingsModal.classList.add('show');
     }
@@ -393,10 +402,10 @@
         currentUser = auth.currentUser;
         updateUserUI(currentUser);
         
-        alert('설정이 성공적으로 저장되었습니다!');
+        alert('변경사항이 저장되었습니다');
         closeModal();
       } catch (e) {
-        alert('설정 저장 실패: ' + e.message);
+        alert('변경사항 저장 실패: ' + e.message);
       }
     });
 
