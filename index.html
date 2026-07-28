@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>미니 디스코드</title>
+  <title>Chat</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -13,7 +13,6 @@
       display: flex; justify-content: center; align-items: center;
     }
 
-    /* 인증(로그인) 화면 */
     #auth-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       width: 100%; height: 100vh; background-color: #313338;
@@ -38,69 +37,79 @@
     }
     .toggle-link-text:hover { color: #00a8fc; }
 
-    /* 메인 채팅 화면 */
+    /* 메인 앱 레이아웃 (디스코드 스타일) */
     #chat-container {
-      display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: column;
+      display: none; width: 100%; height: 100vh; background-color: #313338; display: flex; flex-direction: row;
     }
+
+    /* 좌측 사이드바 (유저 프로필 및 설정 하단 배치) */
+    .sidebar {
+      width: 240px; background-color: #2b2d31; display: flex; flex-direction: column;
+      border-right: 1px solid #1f2023;
+    }
+    .sidebar-header {
+      height: 60px; padding: 0 16px; display: flex; align-items: center;
+      font-weight: bold; font-size: 16px; color: #f2f3f5; border-bottom: 1px solid #1f2023;
+    }
+    .channel-list { flex: 1; padding: 16px; }
+    .channel-item { padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer; font-weight: 500; }
+    .channel-item.active { background-color: #404249; color: #f2f3f5; }
+
+    /* 좌측 하단 유저 패널 */
+    .user-panel {
+      height: 60px; background-color: #232428; display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+    }
+    .user-profile-info { display: flex; align-items: center; gap: 8px; overflow: hidden; cursor: pointer; }
+    .user-avatar-small {
+      width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 14px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .user-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name-tag { display: flex; flex-direction: column; overflow: hidden; }
+    .user-display-name { font-size: 14px; font-weight: bold; color: #f2f3f5; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .user-status { font-size: 11px; color: #23a55a; }
+    
+    .settings-icon-btn {
+      background: none; border: none; color: #b5bac1; cursor: pointer; font-size: 18px; padding: 6px; border-radius: 4px;
+    }
+    .settings-icon-btn:hover { background-color: #35373c; color: #f2f3f5; }
+
+    /* 우측 채팅 영역 */
+    .chat-area { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     header {
-      height: 60px; background-color: #2b2d31; border-bottom: 1px solid #1f2023;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
-      font-weight: bold; font-size: 18px; color: #f2f3f5;
-    }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    #user-nickname-display { font-size: 14px; color: #00a8fc; font-weight: normal; }
-    #logout-btn {
-      background-color: #ed4245; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;
+      height: 60px; background-color: #313338; border-bottom: 1px solid #1f2023;
+      display: flex; align-items: center; padding: 0 20px; font-weight: bold; font-size: 16px; color: #f2f3f5;
     }
 
     .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
-    /* ✨ 디스코드 스타일 날짜 구분선 디자인 */
+    /* 날짜 구분선 */
     .date-divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 20px 0;
-      color: #949ba4;
-      font-size: 12px;
-      font-weight: 600;
+      display: flex; align-items: center; text-align: center; margin: 20px 0; color: #949ba4; font-size: 12px; font-weight: 600;
     }
-    .date-divider::before,
-    .date-divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #3f444b;
-    }
+    .date-divider::before, .date-divider::after { content: ''; flex: 1; border-bottom: 1px solid #3f444b; }
     .date-divider span {
-      padding: 4px 12px;
-      background-color: #2b2d31;
-      border: 1px solid #3f444b;
-      border-radius: 12px;
-      margin: 0 10px;
-      color: #dbdee1;
-      white-space: nowrap;
+      padding: 4px 12px; background-color: #2b2d31; border: 1px solid #3f444b; border-radius: 12px; margin: 0 10px; color: #dbdee1; white-space: nowrap;
     }
 
-    /* 카톡형 메시지 디자인 */
     .message-row { display: flex; align-items: flex-end; gap: 8px; max-width: 75%; }
-    
-    /* 본인 메시지 (오른쪽 배치) */
     .message-row.mine { align-self: flex-end; flex-direction: row-reverse; }
     .message-row.mine .message-content { align-items: flex-end; }
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-radius: 12px; border-bottom-right-radius: 2px; }
     
-    /* 상대방 메시지 (왼쪽 배치) */
     .message-row.other { align-self: flex-start; }
     .message-row.other .message-content { align-items: flex-start; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-radius: 12px; border-bottom-left-radius: 2px; }
 
-    /* 연속된 메시지일 때 처리 */
     .message-row.consecutive { margin-top: -6px; }
     .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
     .message-row.other.consecutive .message-header { display: none; }
 
-    .avatar { width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 15px; flex-shrink: 0; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 15px; flex-shrink: 0; overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    
     .message-content { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; }
     .message-bubble { padding: 10px 14px; word-break: break-all; font-size: 14px; line-height: 1.4; }
@@ -112,9 +121,28 @@
     #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
     #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    @media (max-width: 768px) {
-      .message-row { max-width: 90%; }
+    /* 설정 모달 창 스타일 */
+    #settings-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
     }
+    .modal-content {
+      background-color: #313338; width: 450px; border-radius: 8px; padding: 24px;
+      display: flex; flex-direction: column; gap: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; color: #f2f3f5; font-size: 18px; font-weight: bold; }
+    .modal-close-btn { background: none; border: none; color: #949ba4; font-size: 20px; cursor: pointer; }
+    .modal-close-btn:hover { color: #f2f3f5; }
+    
+    .settings-group { display: flex; flex-direction: column; gap: 8px; }
+    .settings-group label { font-size: 12px; font-weight: bold; color: #b5bac1; text-transform: uppercase; }
+    .settings-group input {
+      padding: 10px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 14px; outline: none;
+    }
+    .settings-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .btn-save { background-color: #5865f2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn-save:hover { background-color: #4752c4; }
+    .btn-logout-modal { background-color: #ed4245; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -131,28 +159,70 @@
   </div>
 
   <div id="chat-container">
-    <header>
-      <span>💬 자유채팅방</span>
-      <div class="header-right">
-        <span id="user-nickname-display"></span>
-        <button id="logout-btn">로그아웃</button>
+    <div class="sidebar">
+      <div class="sidebar-header">🌟 미니 디스코드</div>
+      <div class="channel-list">
+        <div class="channel-item active"># 자유채팅방</div>
       </div>
-    </header>
-    <div class="chat-main">
-      <div id="messages"></div>
-      <form id="message-form">
-        <input type="text" id="message-input" placeholder="메시지 보내기..." autocomplete="off">
-        <button type="submit" id="send-btn">전송</button>
-      </form>
+      <div class="user-panel">
+        <div class="user-profile-info" id="open-settings-btn2">
+          <div class="user-avatar-small" id="sidebar-avatar">유</div>
+          <div class="user-name-tag">
+            <span class="user-display-name" id="sidebar-nickname">닉네임</span>
+            <span class="user-status">온라인</span>
+          </div>
+        </div>
+        <button class="settings-icon-btn" id="open-settings-btn" title="설정">⚙️</button>
+      </div>
+    </div>
+
+    <div class="chat-area">
+      <header><span># 자유채팅방</span></header>
+      <div class="chat-main">
+        <div id="messages"></div>
+        <form id="message-form">
+          <input type="text" id="message-input" placeholder="#자유채팅방에 메시지 보내기..." autocomplete="off">
+          <button type="submit" id="send-btn">전송</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>사용자 설정</span>
+        <button class="modal-close-btn" id="close-settings-btn">&times;</button>
+      </div>
+      
+      <div class="settings-group">
+        <label>프로필 사진 URL 변경</label>
+        <input type="text" id="setting-photo-input" placeholder="https://이미지주소.jpg">
+      </div>
+
+      <div class="settings-group">
+        <label>닉네임 변경</label>
+        <input type="text" id="setting-nickname-input" placeholder="변경할 닉네임 입력">
+      </div>
+
+      <div class="settings-group">
+        <label>새 비밀번호 변경 (변경시에만 입력)</label>
+        <input type="password" id="setting-password-input" placeholder="새 비밀번호 입력">
+      </div>
+
+      <div class="settings-buttons">
+        <button type="button" class="btn-logout-modal" id="modal-logout-btn">로그아웃</button>
+        <button type="button" class="btn-save" id="save-settings-btn">저장하기</button>
+      </div>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
   authDomain: "lilac-13935.firebaseapp.com",
   projectId: "lilac-13935",
@@ -169,7 +239,6 @@
     let isLoginMode = true;
     let currentUser = null;
 
-    // 카톡/디스코드형 렌더링 상태 관리 변수
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
@@ -179,7 +248,75 @@
     const chatContainer = document.getElementById('chat-container');
     const messages = document.getElementById('messages');
     
-    // 모드 전환 (로그인 ↔ 회원가입)
+    // 모달창 제어 요소
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const openSettingsBtn2 = document.getElementById('open-settings-btn2');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const modalLogoutBtn = document.getElementById('modal-logout-btn');
+
+    // 설정창 열기/닫기
+    openSettingsBtn.addEventListener('click', () => openModal());
+    openSettingsBtn2.addEventListener('click', () => openModal());
+    closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+
+    function openModal() {
+      if (!currentUser) return;
+      document.getElementById('setting-nickname-input').value = currentUser.displayName || '';
+      document.getElementById('setting-photo-input').value = currentUser.photoURL || '';
+      document.getElementById('setting-password-input').value = '';
+      settingsModal.style.display = 'flex';
+    }
+
+    // 설정 저장 (닉네임, 아바타, 비밀번호 변경)
+    saveSettingsBtn.addEventListener('click', async () => {
+      const newNick = document.getElementById('setting-nickname-input').value.trim();
+      const newPhoto = document.getElementById('setting-photo-input').value.trim();
+      const newPassword = document.getElementById('setting-password-input').value.trim();
+
+      try {
+        const updateData = {};
+        if (newNick) updateData.displayName = newNick;
+        if (newPhoto !== undefined) updateData.photoURL = newPhoto;
+
+        if (Object.keys(updateData).length > 0) {
+          await updateProfile(auth.currentUser, updateData);
+        }
+
+        if (newPassword) {
+          await updatePassword(auth.currentUser, newPassword);
+        }
+
+        await auth.currentUser.reload();
+        currentUser = auth.currentUser;
+        updateUserUI(currentUser);
+        
+        alert('설정이 성공적으로 저장되었습니다!');
+        settingsModal.style.display = 'none';
+      } catch (e) {
+        alert('설정 저장 실패: ' + e.message);
+      }
+    });
+
+    modalLogoutBtn.addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+      signOut(auth);
+    });
+
+    // 유저 UI 업데이트 함수 (좌측 하단 패널 반영)
+    function updateUserUI(user) {
+      const nameElem = document.getElementById('sidebar-nickname');
+      const avatarElem = document.getElementById('sidebar-avatar');
+
+      nameElem.innerText = user.displayName || '익명';
+      if (user.photoURL) {
+        avatarElem.innerHTML = `<img src="${user.photoURL}" alt="아바타">`;
+      } else {
+        avatarElem.innerHTML = (user.displayName ? user.displayName[0] : '유').toUpperCase();
+      }
+    }
+
     document.getElementById('toggle-mode-btn').addEventListener('click', () => {
       isLoginMode = !isLoginMode;
       document.getElementById('auth-title').innerText = isLoginMode ? "로그인" : "회원가입";
@@ -188,7 +325,6 @@
       document.getElementById('nickname-input').style.display = isLoginMode ? "none" : "block";
     });
 
-    // 로그인 / 회원가입 실행
     document.getElementById('auth-action-btn').addEventListener('click', async () => {
       const email = document.getElementById('email-input').value.trim();
       const pw = document.getElementById('password-input').value.trim();
@@ -208,18 +344,14 @@
       } catch (e) { alert('오류: ' + e.message); }
     });
 
-    // 로그아웃
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
-    // 로그인 상태 감지
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
         authContainer.style.display = 'none';
         chatContainer.style.display = 'flex';
-        document.getElementById('user-nickname-display').innerText = `접속됨: ${user.displayName || '익명'}`;
+        updateUserUI(user);
         
-        socket.emit('join channel', 'general'); // 대화방 입장 및 과거 내역 요청
+        socket.emit('join channel', 'general');
       } else {
         currentUser = null;
         chatContainer.style.display = 'none';
@@ -228,7 +360,6 @@
       }
     });
 
-    // 메시지 전송
     document.getElementById('message-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const input = document.getElementById('message-input');
@@ -244,6 +375,7 @@
         channel: 'general',
         uid: currentUser.uid,
         nickname: currentUser.displayName || '익명',
+        photoURL: currentUser.photoURL || null,
         text: text,
         date: dateStr,
         time: timeStr
@@ -251,7 +383,6 @@
       input.value = '';
     });
 
-    // 서버로부터 과거 전체 대화 수신
     socket.on('chat history', (data) => {
       messages.innerHTML = '';
       lastDateStr = null; lastSenderId = null; lastMinuteStr = null; lastTimeElem = null;
@@ -260,16 +391,13 @@
       }
     });
 
-    // 실시간 메시지 수신
     socket.on('chat message', (msg) => appendMessage(msg));
 
-    // 메시지 출력 및 날짜 구분선 렌더링 함수
     function appendMessage(msg) {
       if (!currentUser) return;
 
       const isMine = (msg.uid === currentUser.uid);
 
-      // 날짜가 바뀌었거나 첫 메시지일 경우 디스코드 스타일 날짜 구분선 출력
       if (msg.date !== lastDateStr) {
         const divider = document.createElement('div');
         divider.className = 'date-divider';
@@ -277,7 +405,7 @@
         messages.appendChild(divider);
         
         lastDateStr = msg.date;
-        lastSenderId = null; // 날짜 변경 시 연속 판정 초기화
+        lastSenderId = null;
       }
 
       const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time);
@@ -288,7 +416,11 @@
       if (!isMine) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
-        avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
+        if (msg.photoURL) {
+          avatar.innerHTML = `<img src="${msg.photoURL}" alt="아바타">`;
+        } else {
+          avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
+        }
         row.appendChild(avatar);
       }
 
