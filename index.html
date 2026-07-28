@@ -47,8 +47,7 @@
       display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: row;
     }
 
-   .sidebar {
-      /* 기존의 고정 너비(240px) 대신 flex 비율을 적용합니다 */
+    .sidebar {
       flex: 6.4; 
       min-width: 180px; 
       max-width: 400px;
@@ -69,11 +68,22 @@
       background-color: #5865f2;
     }
 
-    .sidebar-header {
-      height: 60px; padding: 0 16px; display: flex; align-items: center;
-      font-weight: bold; font-size: 16px; color: #f2f3f5; border-bottom: 1px solid #1f2023;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* 사이드바 상단 헤더와 채팅창 상단 헤더 높이 및 스타일 통일 */
+    .sidebar-header, .chat-header {
+      height: 48px; 
+      padding: 0 16px; 
+      display: flex; 
+      align-items: center;
+      font-weight: bold; 
+      font-size: 16px; 
+      color: #f2f3f5; 
+      border-bottom: 1px solid #1f2023;
+      box-sizing: border-box;
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis;
     }
+
     .channel-list { flex: 1; padding: 16px; overflow-y: auto; }
     .channel-item { padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .channel-item.active { background-color: #404249; color: #f2f3f5; }
@@ -104,7 +114,6 @@
     .settings-icon-btn:hover img { filter: brightness(1); }
 
     .chat-area { 
-      /* 나머지 채팅 영역이 30 비율을 차지하도록 설정합니다 */
       flex: 30; 
       display: flex; 
       flex-direction: column; 
@@ -224,7 +233,7 @@
     </div>
 
     <div class="chat-area">
-      <header><span># 자유채팅방</span></header>
+      <div class="chat-header"><span># 자유채팅방</span></div>
       <div class="chat-main">
         <div id="messages"></div>
         <form id="message-form">
@@ -268,15 +277,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-   const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+      authDomain: "lilac-13935.firebaseapp.com",
+      projectId: "lilac-13935",
+      storageBucket: "lilac-13935.firebasestorage.app",
+      messagingSenderId: "485552650048",
+      appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+      measurementId: "G-81H89P6F6E"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
