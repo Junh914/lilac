@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
+  <title>미니 디스코드</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -56,9 +56,30 @@
     .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
-    /* 날짜 구분선 */
+    /* ✨ 디스코드 스타일 날짜 구분선 디자인 */
     .date-divider {
-      text-align: center; font-size: 12px; color: #949ba4; margin: 15px 0; font-weight: bold;
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #949ba4;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .date-divider::before,
+    .date-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #3f444b;
+    }
+    .date-divider span {
+      padding: 4px 12px;
+      background-color: #2b2d31;
+      border: 1px solid #3f444b;
+      border-radius: 12px;
+      margin: 0 10px;
+      color: #dbdee1;
+      white-space: nowrap;
     }
 
     /* 카톡형 메시지 디자인 */
@@ -74,7 +95,7 @@
     .message-row.other .message-content { align-items: flex-start; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-radius: 12px; border-bottom-left-radius: 2px; }
 
-    /* 연속된 메시지일 때 여백 줄이기 및 프로필 숨기기 */
+    /* 연속된 메시지일 때 처리 */
     .message-row.consecutive { margin-top: -6px; }
     .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
     .message-row.other.consecutive .message-header { display: none; }
@@ -84,7 +105,6 @@
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; }
     .message-bubble { padding: 10px 14px; word-break: break-all; font-size: 14px; line-height: 1.4; }
     
-    /* 시간 표시 */
     .time-container { display: flex; align-items: flex-end; }
     .timestamp { font-size: 10px; color: #949ba4; margin: 0 4px 2px 4px; white-space: nowrap; }
 
@@ -92,7 +112,6 @@
     #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
     #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    /* 스마트폰 최적화 */
     @media (max-width: 768px) {
       .message-row { max-width: 90%; }
     }
@@ -133,25 +152,24 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    // 🔴 본인의 Firebase 설정값 입력
     const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+      apiKey: "본인의_API_키",
+      authDomain: "프로젝트_ID.firebaseapp.com",
+      projectId: "프로젝트_ID",
+      storageBucket: "프로젝트_ID.appspot.com",
+      messagingSenderId: "센더_ID",
+      appId: "앱_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    // Render 서버 환경 문제 우회를 위해 웹소켓 전용 설정
     const socket = io({ transports: ['websocket'] });
 
     let isLoginMode = true;
     let currentUser = null;
 
-    // 카톡형 렌더링 상태 변수
+    // 카톡/디스코드형 렌더링 상태 관리 변수
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
@@ -161,7 +179,7 @@
     const chatContainer = document.getElementById('chat-container');
     const messages = document.getElementById('messages');
     
-    // 모드 전환
+    // 모드 전환 (로그인 ↔ 회원가입)
     document.getElementById('toggle-mode-btn').addEventListener('click', () => {
       isLoginMode = !isLoginMode;
       document.getElementById('auth-title').innerText = isLoginMode ? "로그인" : "회원가입";
@@ -184,7 +202,7 @@
         } else {
           const cred = await createUserWithEmailAndPassword(auth, email, pw);
           await updateProfile(cred.user, { displayName: nick });
-          await auth.currentUser.reload(); // 즉시 닉네임 반영
+          await auth.currentUser.reload();
           alert('가입 완료!');
         }
       } catch (e) { alert('오류: ' + e.message); }
@@ -193,7 +211,7 @@
     // 로그아웃
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // 인증 상태 관리
+    // 로그인 상태 감지
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
@@ -201,7 +219,7 @@
         chatContainer.style.display = 'flex';
         document.getElementById('user-nickname-display').innerText = `접속됨: ${user.displayName || '익명'}`;
         
-        socket.emit('join channel', 'general'); // 채널 접속 및 내역 요청
+        socket.emit('join channel', 'general'); // 대화방 입장 및 과거 내역 요청
       } else {
         currentUser = null;
         chatContainer.style.display = 'none';
@@ -233,7 +251,7 @@
       input.value = '';
     });
 
-    // 소켓 수신 (과거 대화 복구)
+    // 서버로부터 과거 전체 대화 수신
     socket.on('chat history', (data) => {
       messages.innerHTML = '';
       lastDateStr = null; lastSenderId = null; lastMinuteStr = null; lastTimeElem = null;
@@ -242,23 +260,24 @@
       }
     });
 
-    // 소켓 수신 (실시간 메시지)
+    // 실시간 메시지 수신
     socket.on('chat message', (msg) => appendMessage(msg));
 
-    // 렌더링 엔진 (날짜 및 시간 그룹화 처리)
+    // 메시지 출력 및 날짜 구분선 렌더링 함수
     function appendMessage(msg) {
-      if (!currentUser) return; // 닉네임 로딩 대기 에러 방지
+      if (!currentUser) return;
 
       const isMine = (msg.uid === currentUser.uid);
 
-      // 1. 날짜가 바뀌면 구분선 추가
+      // 날짜가 바뀌었거나 첫 메시지일 경우 디스코드 스타일 날짜 구분선 출력
       if (msg.date !== lastDateStr) {
         const divider = document.createElement('div');
         divider.className = 'date-divider';
-        divider.innerText = `--- ${msg.date} ---`;
+        divider.innerHTML = `<span>${msg.date}</span>`;
         messages.appendChild(divider);
+        
         lastDateStr = msg.date;
-        lastSenderId = null; // 날짜 바뀌면 연속 판정 리셋
+        lastSenderId = null; // 날짜 변경 시 연속 판정 초기화
       }
 
       const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time);
@@ -266,7 +285,6 @@
       const row = document.createElement('div');
       row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
 
-      // 남이 보낸 메시지는 아바타 공간 생성
       if (!isMine) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
@@ -280,7 +298,6 @@
       const content = document.createElement('div');
       content.className = 'message-content';
 
-      // 헤더(닉네임) 생성 (남이 보냈고 & 연속 메시지가 아닐 때만)
       if (!isMine && !isConsecutive) {
         const header = document.createElement('div');
         header.className = 'message-header';
@@ -297,12 +314,10 @@
       timeDiv.className = 'timestamp';
       timeDiv.innerText = msg.time;
 
-      // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
       if (isConsecutive && lastTimeElem) {
         lastTimeElem.style.display = 'none';
       }
       
-      // 내 메시지는 [시간][말풍선], 남의 메시지는 [말풍선][시간] 구조로 삽입
       if (isMine) {
         timeContainer.appendChild(timeDiv);
         timeContainer.appendChild(content);
@@ -315,7 +330,6 @@
       messages.appendChild(row);
       messages.scrollTop = messages.scrollHeight;
 
-      // 상태 업데이트
       lastTimeElem = timeDiv;
       lastSenderId = msg.uid;
       lastMinuteStr = msg.time;
