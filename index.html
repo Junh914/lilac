@@ -14,6 +14,23 @@
       user-select: none;
     }
 
+    /* 디스코드 스타일 커스텀 스크롤바 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #2b2d31;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1a1b1e;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #111214;
+    }
+
     #auth-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       width: 100%; height: 100vh; background-color: #313338;
@@ -38,18 +55,19 @@
     }
     .toggle-link-text:hover { color: #00a8fc; }
 
+    /* 초기 깜빡임 방지를 위해 기본값을 반드시 display: none으로 고정 */
     #chat-container {
-      display: none; width: 100%; height: 100vh; background-color: #313338; display: flex; flex-direction: row;
+      display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: row;
     }
 
-    /* 사이드바 기본 너비를 디스코기와 동일한 240px로 설정 */
+    /* 사이드바와 채팅 영역 기본 비율을 6.4 : 30 비율로 설정 (calc 활용) */
     .sidebar {
-      width: 240px; min-width: 180px; max-width: 400px;
+      width: calc(100% * 6.4 / 36.4); min-width: 180px; max-width: 400px;
       background-color: #2b2d31; display: flex; flex-direction: column;
       border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
     }
     
-    /* 부드러운 디스코드 스타일 리사이저 */
+    /* 부드러운 리사이저 */
     .sidebar-resizer {
       width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
       cursor: ew-resize; z-index: 10; background-color: transparent;
@@ -136,7 +154,7 @@
       display: flex;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.15s ease; /* 빠른 속도의 페이드 효과 */
+      transition: opacity 0.15s ease;
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
     }
@@ -277,7 +295,7 @@
     let lastMinuteStr = null;
     let lastTimeElem = null;
 
-    // 사이드바 너비 조절 최적화 (requestAnimationFrame 적용으로 부드러움 극대화)
+    // 사이드바 너비 조절 최적화 (requestAnimationFrame 적용)
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
     let isResizing = false;
@@ -324,7 +342,6 @@
     openSettingsBtn2.addEventListener('click', () => openModal());
     closeSettingsBtn.addEventListener('click', () => closeModal());
 
-    // 팝업 외부(배경 오버레이) 클릭 시 페이드아웃 효과와 함께 닫기
     settingsModal.addEventListener('click', (e) => {
       if (e.target === settingsModal) {
         closeModal();
