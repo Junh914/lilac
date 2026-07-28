@@ -19,7 +19,13 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // public 폴더 내 정적 파일 제공
-app.use(express.static(path.join(__dirname, 'public')));
+// 프로젝트 루트 디렉토리(__dirname)를 정적 파일 경로로 지정
+app.use(express.static(path.join(__dirname)));
+
+// 루트 경로('/')로 접속했을 때 index.html 보내기
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // 루트 경로 접속 시 index.html 반환
 app.get('/', (req, res) => {
