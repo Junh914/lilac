@@ -4,16 +4,13 @@ const { Server } = require('socket.io');
 const admin = require('firebase-admin');
 const path = require('path');
 
-// 1. Firebase Admin SDK 연결 (Render 환경 변수 사용 방식)
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// 1. Firebase Admin SDK 초기화 (환경 변수 사용, 중복 초기화 방지)
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 
 const db = admin.firestore();
 
@@ -23,65 +20,24 @@ const io = new Server(server);
 
 // public 폴더 내 정적 파일 제공
 app.use(express.static(path.join(__dirname, 'public')));
-// 루트 경로('/')로 접속했을 때 index.html 보내주기
-app.get('/', (req.get ? req.get : (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-}));
 
-// 🟢 3개월이 초과된 오래된 메시지 자동 삭제 함수
-async function cleanupOldMessages() {
-  try {
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+// 루트 경로 접속 시 index.html 반환
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-    const snapshot = await db.collection('messages')
-      .where('timestamp', '<', admin.firestore.Timestamp.fromDate(threeMonthsAgo))
-      .get();
-
-    if (snapshot.empty) return;
-
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    
-    await batch.commit();
-    console.log(`🧹 오래된 메시지 ${snapshot.size}개를 삭제했습니다.`);
-  } catch (error) {
-    console.error('오래된 메시지 삭제 중 오류 발생:', error);
-  }
-}
-
-// 서버 실행 시 1회 청소 후, 24시간마다 반복 실행
-cleanupOldMessages();
-setInterval(cleanupOldMessages, 24 * 60 * 60 * 1000);
-
-
-// 🟢 Firestore에서 해당 채널의 최근 3개월 대화 내역만 읽어오는 함수
+// 2. 채널별 대화 내역 불러오기 함수 (데이터베이스 연동)
 async function sendChannelHistory(socket, channel) {
   try {
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
     const snapshot = await db.collection('messages')
       .where('channel', '==', channel)
-      .where('timestamp', '>=', admin.firestore.Timestamp.fromDate(threeMonthsAgo))
       .orderBy('timestamp', 'asc')
+      .limit(100)
       .get();
 
-    const history = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        channel: data.channel,
-        uid: data.uid,
-        nickname: data.nickname,
-        profileImg: data.profileImg,
-        text: data.text,
-        time: data.time,
-        fullDate: data.fullDate,
-        senderId: data.senderId
-      };
+    const history = [];
+    snapshot.forEach((doc) => {
+      history.push(doc.data());
     });
 
     socket.emit('chat history', { channel, history });
@@ -91,9 +47,11 @@ async function sendChannelHistory(socket, channel) {
   }
 }
 
+// 3. Socket.io 실시간 통신 및 데이터베이스 저장 관리
 io.on('connection', (socket) => {
   console.log('유저 접속 완료:', socket.id);
 
+  // 채널 입장 처리
   socket.on('join channel', (channel) => {
     socket.rooms.forEach((room) => {
       if (room !== socket.id) socket.leave(room);
@@ -102,39 +60,35 @@ io.on('connection', (socket) => {
     socket.join(channel);
     console.log(`유저[${socket.id}]가 [${channel}] 채널로 이동했습니다.`);
 
+    // DB에서 해당 채널 대화 내역 전송
     sendChannelHistory(socket, channel);
   });
 
+  // 메시지 수신 및 Firestore DB 저장
   socket.on('chat message', async (data) => {
     const channel = data.channel || 'general';
 
     const messageData = {
       channel: channel,
-      uid: data.uid,
-      nickname: data.nickname || '익명',
-      profileImg: data.profileImg || null,
+      nickname: data.nickname || '손님',
       text: data.text,
-      time: data.time,
-      fullDate: data.fullDate,
-      senderId: socket.id,
+      time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     };
 
     try {
-      const docRef = await db.collection('messages').add(messageData);
+      // Firestore 'messages' 컬렉션에 메시지 저장
+      await db.collection('messages').add(messageData);
 
-      io.to(channel).emit('chat message', {
-        id: docRef.id,
-        ...data,
-        senderId: socket.id
-      });
+      // 같은 채널에 있는 모든 사용자에게 메시지 전송
+      io.to(channel).emit('chat message', messageData);
     } catch (error) {
-      console.error('메시지 DB 저장 오류:', error);
+      console.error('메시지 저장 및 전송 실패:', error);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('유저 접속 종료:', socket.id);
+    console.log('유저 연결 해제:', socket.id);
   });
 });
 
