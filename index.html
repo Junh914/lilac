@@ -11,7 +11,7 @@
       background-color: #313338; color: #dbdee1;
       font-family: 'Noto Sans KR', sans-serif, system-ui;
       display: flex; justify-content: center; align-items: center;
-      user-select: none; /* 드래그 시 텍스트 선택 방지 */
+      user-select: none;
     }
 
     #auth-container {
@@ -42,19 +42,20 @@
       display: none; width: 100%; height: 100vh; background-color: #313338; display: flex; flex-direction: row;
     }
 
-    /* 사이드바 너비 조절 가능하도록 수정 (position: relative 및 min/max 제한) */
+    /* 사이드바 기본 비율 및 레이아웃 */
     .sidebar {
       width: 240px; min-width: 180px; max-width: 400px;
       background-color: #2b2d31; display: flex; flex-direction: column;
       border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
     }
     
-    /* 사이드바 우측 마우스 드래그 핸들 (리사이저) */
+    /* 자연스러운 디스코드 스타일 리사이저 */
     .sidebar-resizer {
-      width: 5px; height: 100%; position: absolute; right: 0; top: 0;
-      cursor: ew-resize; z-index: 10;
+      width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
+      cursor: ew-resize; z-index: 10; background-color: transparent;
     }
-    .sidebar-resizer:hover, .sidebar-resizer.resizing {
+    .sidebar-resizer:hover::after, .sidebar-resizer.resizing::after {
+      content: ''; position: absolute; left: 2px; top: 0; width: 2px; height: 100%;
       background-color: #5865f2;
     }
 
@@ -67,7 +68,6 @@
     .channel-item { padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .channel-item.active { background-color: #404249; color: #f2f3f5; }
 
-    /* 유저 패널 높이 유지 */
     .user-panel {
       height: 60px; background-color: #232428; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0;
     }
@@ -131,7 +131,7 @@
     #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
     #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    /* 설정 모달 스타일 */
+    /* 설정 모달 스타일 (우측 상단 X 버튼 및 모달 배치 개선) */
     #settings-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
@@ -139,10 +139,17 @@
     .modal-content {
       background-color: #313338; width: 550px; border-radius: 8px; padding: 32px;
       display: flex; flex-direction: column; gap: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      position: relative; /* X 버튼을 우측 상단 모서리에 고정하기 위한 기준점 */
     }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; color: #f2f3f5; font-size: 20px; font-weight: bold; }
-    .modal-close-btn { background: none; border: none; color: #949ba4; font-size: 24px; cursor: pointer; }
-    .modal-close-btn:hover { color: #f2f3f5; }
+    .modal-header { color: #f2f3f5; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+    
+    /* X 버튼 우측 상단 배치 */
+    .modal-close-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: none; border: none; color: #949ba4; font-size: 24px; cursor: pointer;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .modal-close-btn:hover { color: #f2f3f5; background-color: rgba(255,255,255,0.05); }
     
     .settings-group { display: flex; flex-direction: column; gap: 10px; }
     .settings-group label { font-size: 13px; font-weight: bold; color: #b5bac1; text-transform: uppercase; }
@@ -207,10 +214,9 @@
 
   <div id="settings-modal">
     <div class="modal-content">
-      <div class="modal-header">
-        <span>사용자 설정</span>
-        <button class="modal-close-btn" id="close-settings-btn">&times;</button>
-      </div>
+      <button class="modal-close-btn" id="close-settings-btn">&times;</button>
+      
+      <div class="modal-header">사용자 설정</div>
       
       <div class="settings-group">
         <label>프로필 사진 파일 선택</label>
@@ -305,6 +311,13 @@
     openSettingsBtn.addEventListener('click', () => openModal());
     openSettingsBtn2.addEventListener('click', () => openModal());
     closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+
+    // 팝업 외부(배경 오버레이) 클릭 시 설정 닫기
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+      }
+    });
 
     function openModal() {
       if (!currentUser) return;
