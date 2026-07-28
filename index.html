@@ -42,14 +42,14 @@
       display: none; width: 100%; height: 100vh; background-color: #313338; display: flex; flex-direction: row;
     }
 
-    /* 사이드바 기본 비율 및 레이아웃 */
+    /* 사이드바 기본 너비를 디스코기와 동일한 240px로 설정 */
     .sidebar {
       width: 240px; min-width: 180px; max-width: 400px;
       background-color: #2b2d31; display: flex; flex-direction: column;
       border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
     }
     
-    /* 자연스러운 디스코드 스타일 리사이저 */
+    /* 부드러운 디스코드 스타일 리사이저 */
     .sidebar-resizer {
       width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
       cursor: ew-resize; z-index: 10; background-color: transparent;
@@ -131,19 +131,27 @@
     #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
     #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    /* 설정 모달 스타일 (우측 상단 X 버튼 및 모달 배치 개선) */
+    /* 빠른 페이드아웃이 적용된 설정 모달 스타일 */
     #settings-modal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease; /* 빠른 속도의 페이드 효과 */
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
     }
+    #settings-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .modal-content {
       background-color: #313338; width: 550px; border-radius: 8px; padding: 32px;
       display: flex; flex-direction: column; gap: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
-      position: relative; /* X 버튼을 우측 상단 모서리에 고정하기 위한 기준점 */
+      position: relative;
     }
     .modal-header { color: #f2f3f5; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
     
-    /* X 버튼 우측 상단 배치 */
     .modal-close-btn {
       position: absolute; top: 20px; right: 20px;
       background: none; border: none; color: #949ba4; font-size: 24px; cursor: pointer;
@@ -269,10 +277,11 @@
     let lastMinuteStr = null;
     let lastTimeElem = null;
 
-    // 사이드바 너비 조절(Resize) 로직
+    // 사이드바 너비 조절 최적화 (requestAnimationFrame 적용으로 부드러움 극대화)
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
     let isResizing = false;
+    let rafId = null;
 
     resizer.addEventListener('mousedown', (e) => {
       isResizing = true;
@@ -282,10 +291,13 @@
 
     window.addEventListener('mousemove', (e) => {
       if (!isResizing) return;
-      const newWidth = e.clientX;
-      if (newWidth >= 180 && newWidth <= 400) {
-        sidebar.style.width = newWidth + 'px';
-      }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const newWidth = e.clientX;
+        if (newWidth >= 180 && newWidth <= 400) {
+          sidebar.style.width = newWidth + 'px';
+        }
+      });
     });
 
     window.addEventListener('mouseup', () => {
@@ -310,12 +322,12 @@
 
     openSettingsBtn.addEventListener('click', () => openModal());
     openSettingsBtn2.addEventListener('click', () => openModal());
-    closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+    closeSettingsBtn.addEventListener('click', () => closeModal());
 
-    // 팝업 외부(배경 오버레이) 클릭 시 설정 닫기
+    // 팝업 외부(배경 오버레이) 클릭 시 페이드아웃 효과와 함께 닫기
     settingsModal.addEventListener('click', (e) => {
       if (e.target === settingsModal) {
-        settingsModal.style.display = 'none';
+        closeModal();
       }
     });
 
@@ -325,7 +337,11 @@
       document.getElementById('setting-password-input').value = '';
       fileLabelText.innerText = currentUser.photoURL ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택...";
       selectedImageBase64 = currentUser.photoURL || null;
-      settingsModal.style.display = 'flex';
+      settingsModal.classList.add('show');
+    }
+
+    function closeModal() {
+      settingsModal.classList.remove('show');
     }
 
     fileInput.addEventListener('change', (e) => {
@@ -363,14 +379,14 @@
         updateUserUI(currentUser);
         
         alert('설정이 성공적으로 저장되었습니다!');
-        settingsModal.style.display = 'none';
+        closeModal();
       } catch (e) {
         alert('설정 저장 실패: ' + e.message);
       }
     });
 
     modalLogoutBtn.addEventListener('click', () => {
-      settingsModal.style.display = 'none';
+      closeModal();
       signOut(auth);
     });
 
