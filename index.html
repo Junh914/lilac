@@ -152,15 +152,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // 🔴 본인의 Firebase 설정값 입력
-    const firebaseConfig = {
-      apiKey: "본인의_API_키",
-      authDomain: "프로젝트_ID.firebaseapp.com",
-      projectId: "프로젝트_ID",
-      storageBucket: "프로젝트_ID.appspot.com",
-      messagingSenderId: "센더_ID",
-      appId: "앱_ID"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+  authDomain: "lilac-13935.firebaseapp.com",
+  projectId: "lilac-13935",
+  storageBucket: "lilac-13935.firebasestorage.app",
+  messagingSenderId: "485552650048",
+  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+  measurementId: "G-81H89P6F6E"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
