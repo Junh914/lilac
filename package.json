@@ -1,17 +1,14 @@
 {
-  "name": "hanwoo-chat",
+  "name": "lilac",
   "version": "1.0.0",
-  "description": "",
+  "description": "Mini Discord Chat App with Firebase and Socket.io",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "firebase-admin": "^14.2.0",
-    "mongoose": "^9.8.0",
-    "socket.io": "^4.8.3"
+    "express": "^4.19.2",
+    "firebase-admin": "^12.0.0",
+    "socket.io": "^4.7.5"
   }
 }
