@@ -14,21 +14,21 @@
       user-select: none;
     }
 
-    /* 디스코드 스타일 커스텀 스크롤바 */
+    /* 밝고 더 굵어진 커스텀 스크롤바 설정 */
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 12px;
+      height: 12px;
     }
     ::-webkit-scrollbar-track {
       background: #2b2d31;
-      border-radius: 4px;
+      border-radius: 6px;
     }
     ::-webkit-scrollbar-thumb {
-      background: #1a1b1e;
-      border-radius: 4px;
+      background: #80848e; /* 밝은 회색 */
+      border-radius: 6px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #111214;
+      background: #b5bac1; /* 마우스 호버 시 더 밝게 */
     }
 
     #auth-container {
@@ -55,19 +55,17 @@
     }
     .toggle-link-text:hover { color: #00a8fc; }
 
-    /* 초기 깜빡임 방지를 위해 기본값을 반드시 display: none으로 고정 */
     #chat-container {
       display: none; width: 100%; height: 100vh; background-color: #313338; flex-direction: row;
     }
 
-    /* 사이드바와 채팅 영역 기본 비율을 6.4 : 30 비율로 설정 (calc 활용) */
+    /* 사이드바와 채팅 영역 기본 비율 (6.4 : 30) */
     .sidebar {
       width: calc(100% * 6.4 / 36.4); min-width: 180px; max-width: 400px;
       background-color: #2b2d31; display: flex; flex-direction: column;
       border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
     }
     
-    /* 부드러운 리사이저 */
     .sidebar-resizer {
       width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
       cursor: ew-resize; z-index: 10; background-color: transparent;
@@ -149,7 +147,6 @@
     #message-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background-color: #383a40; color: #dbdee1; font-size: 14px; outline: none; }
     #send-btn { padding: 0 20px; border-radius: 8px; border: none; background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; }
 
-    /* 빠른 페이드아웃이 적용된 설정 모달 스타일 */
     #settings-modal {
       display: flex;
       opacity: 0;
@@ -182,11 +179,13 @@
     .settings-group input {
       padding: 12px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 15px; outline: none;
     }
+    
+    /* 파란색 점선을 제거하고 실선 테두리로 변경한 이미지 선택 버튼 */
     .file-upload-label {
-      display: inline-block; padding: 14px; background-color: #2b2d31; border: 1px dashed #5865f2;
+      display: inline-block; padding: 14px; background-color: #2b2d31; border: 1px solid #3f444b;
       border-radius: 4px; text-align: center; color: #dbdee1; cursor: pointer; font-size: 14px;
     }
-    .file-upload-label:hover { background-color: #35373c; }
+    .file-upload-label:hover { background-color: #35373c; border-color: #5865f2; }
 
     .settings-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
     .btn-save { background-color: #5865f2; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
@@ -272,7 +271,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
   authDomain: "lilac-13935.firebaseapp.com",
   projectId: "lilac-13935",
@@ -295,7 +294,6 @@
     let lastMinuteStr = null;
     let lastTimeElem = null;
 
-    // 사이드바 너비 조절 최적화 (requestAnimationFrame 적용)
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
     let isResizing = false;
