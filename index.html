@@ -106,7 +106,7 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* 날짜 변경선 디자인 (롤백 적용) */
+    /* 클래식 날짜 변경선 디자인 */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
@@ -117,12 +117,15 @@
     }
     .date-divider span { padding: 0 8px; }
     
-    /* 메시지 정렬 및 묶음 스타일 */
+    /* 메시지 정렬 및 기본 색상 복원 스타일 */
     .message-row { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
     .message-row.is-me { flex-direction: row-reverse; text-align: right; }
     .message-row.is-me .message-content { align-items: flex-end; }
     .message-row.is-me .message-header { flex-direction: row-reverse; }
-    .message-row.is-me .message-bubble { background-color: #5865f2; color: #ffffff; border-radius: 8px 0 8px 8px; }
+    
+    /* 내가 보낸 메시지 및 타인 메시지 공통 기본 색상(디스코드 기본 다크톤) 유지 */
+    .message-row .message-bubble { background-color: transparent; color: #dbdee1; padding: 0; border-radius: 0; }
+    .message-row.is-me .message-bubble { background-color: transparent; color: #dbdee1; }
 
     .message-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; }
     .message-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -135,7 +138,7 @@
     .bubble-wrapper { display: flex; align-items: flex-end; gap: 8px; width: fit-content; margin-top: 2px; }
     .message-row.is-me .bubble-wrapper { flex-direction: row-reverse; }
     
-    .message-bubble { font-size: 14px; color: #dbdee1; line-height: 1.4; word-break: break-all; background-color: #2b2d31; padding: 8px 12px; border-radius: 0 8px 8px 8px; }
+    .message-bubble { font-size: 14px; color: #dbdee1; line-height: 1.4; word-break: break-all; }
     .timestamp-inline { font-size: 11px; color: #949ba4; white-space: nowrap; }
 
     /* 입력창 영역 */
@@ -252,7 +255,7 @@
 
     let currentUser = null;
     let currentChannel = 'general';
-    let lastDate = null; // 날짜 변경선 체크용
+    let lastDate = null;
 
     // 1. 초기 6.4 : 30 너비 비율 적용
     window.addEventListener('DOMContentLoaded', () => {
@@ -501,12 +504,11 @@
       });
     }
 
-    // 메시지 렌더링 및 그룹화 함수 (아바타 미표시 + 분 단위 시간은 가장 아래 메시지에만 표시)
+    // 메시지 렌더링 및 그룹화 함수 (기존 색상 유지)
     function appendMessage(msg) {
       const messagesDiv = document.getElementById('messages');
       if (!messagesDiv) return;
 
-      // 날짜 변경선 추가
       if (msg.date && msg.date !== lastDate) {
         lastDate = msg.date;
         const divider = document.createElement('div');
@@ -520,7 +522,6 @@
       const isMe = currentUser && msg.uid === currentUser.uid;
       const lastRow = messagesDiv.lastElementChild;
 
-      // 같은 사용자가 같은 분(time)에 보낸 메시지인 경우 그룹화
       if (lastRow && lastRow.classList.contains('message-row') && 
           lastRow.dataset.uid === msg.uid && 
           lastRow.dataset.time === msg.time && 
@@ -528,11 +529,9 @@
         
         const content = lastRow.querySelector('.message-content');
         if (content) {
-          // 기존에 있던 가장 아래쪽 메시지의 시간 제거
           const oldTimestamp = content.querySelector('.timestamp-inline');
           if (oldTimestamp) oldTimestamp.remove();
 
-          // 새로운 버블 추가
           const bubbleWrapper = document.createElement('div');
           bubbleWrapper.className = 'bubble-wrapper';
 
@@ -541,7 +540,6 @@
           bubble.innerText = msg.text || '';
           bubbleWrapper.appendChild(bubble);
 
-          // 가장 아래쪽(마지막) 메시지에만 시간 표시
           const timestamp = document.createElement('span');
           timestamp.className = 'timestamp timestamp-inline';
           timestamp.innerText = msg.time || '';
@@ -553,14 +551,12 @@
         }
       }
 
-      // 새로운 메시지 행 생성
       const row = document.createElement('div');
       row.className = `message-row ${isMe ? 'is-me' : ''}`;
       row.dataset.uid = msg.uid;
       row.dataset.time = msg.time;
       row.dataset.isMe = isMe ? 'true' : 'false';
 
-      // 나의 아바타는 표시하지 않고, 타인의 아바타만 표시
       if (!isMe) {
         const avatar = document.createElement('div');
         avatar.className = 'message-avatar';
