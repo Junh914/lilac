@@ -48,9 +48,9 @@
     }
     .auth-switch span { color: #00a8fc; text-decoration: underline; }
 
-    /* 메인 앱 레이아웃 (사이드바 - 리사이저 - 채팅창) */
+    /* 메인 앱 레이아웃 */
     #app-container {
-      display: none; /* 로그인 전 숨김 */
+      display: none;
       width: 100vw; height: 100vh;
       display: flex; flex-direction: row;
       overflow: hidden;
@@ -82,28 +82,21 @@
       padding: 10px 12px; background-color: #232428; display: flex; align-items: center; justify-content: space-between;
     }
     .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
+    .user-actions { display: flex; gap: 6px; align-items: center; }
+    .action-icon-btn { background: none; border: none; color: #949ba4; cursor: pointer; font-size: 16px; padding: 4px; }
+    .action-icon-btn:hover { color: #f2f3f5; }
     .logout-btn { background: none; border: none; color: #949ba4; cursor: pointer; font-size: 13px; }
     .logout-btn:hover { color: #f23f43; }
 
     /* 리사이저 바 */
     #sidebar-resizer {
-      width: 5px;
-      background-color: #1e1f22;
-      cursor: col-resize;
-      flex-shrink: 0;
-      transition: background-color 0.2s;
+      width: 5px; background-color: #1e1f22; cursor: col-resize; flex-shrink: 0; transition: background-color 0.2s;
     }
-    #sidebar-resizer:hover, #sidebar-resizer.resizing {
-      background-color: #5865f2;
-    }
+    #sidebar-resizer:hover, #sidebar-resizer.resizing { background-color: #5865f2; }
 
     /* 메인 채팅 영역 */
     #chat-container {
-      flex: 1;
-      background-color: #313338;
-      display: flex; flex-direction: column;
-      min-width: 300px;
-      position: relative;
+      flex: 1; background-color: #313338; display: flex; flex-direction: column; min-width: 300px; position: relative;
     }
     .chat-header {
       height: 48px; padding: 0 16px; display: flex; align-items: center;
@@ -113,25 +106,47 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
     }
     
-    /* 메시지 아이템 스타일 */
+    /* 메시지 정렬 (내 메시지: 우측, 타인 메시지: 좌측) */
     .message-row { display: flex; gap: 16px; width: 100%; }
-    .message-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; }
-    .message-content { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .message-row.is-me { flex-direction: row-reverse; text-align: right; }
+    .message-row.is-me .message-content { align-items: flex-end; }
+    .message-row.is-me .message-header { flex-direction: row-reverse; }
+    .message-row.is-me .message-bubble { background-color: #5865f2; color: #ffffff; border-radius: 8px 0 8px 8px; }
+
+    .message-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; }
+    .message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .message-content { display: flex; flex-direction: column; gap: 4px; flex: 1; max-width: 70%; }
     .message-header { display: flex; align-items: center; gap: 8px; font-size: 14px; }
     .message-header .username { font-weight: 600; color: #f2f3f5; }
     .message-header .timestamp { font-size: 12px; color: #949ba4; }
-    .message-bubble { font-size: 14px; color: #dbdee1; line-height: 1.4; word-break: break-all; }
+    .message-bubble { font-size: 14px; color: #dbdee1; line-height: 1.4; word-break: break-all; background-color: #2b2d31; padding: 8px 12px; border-radius: 0 8px 8px 8px; width: fit-content; }
 
     /* 입력창 영역 */
     .chat-input-area { padding: 0 16px 24px 16px; }
     .chat-input-wrapper {
-      background-color: #383a40; border-radius: 8px; padding: 10px 16px;
-      display: flex; align-items: center;
+      background-color: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center;
     }
     .chat-input {
-      width: 100%; background: none; border: none; outline: none;
-      color: #dbdee1; font-size: 14px; font-family: inherit;
+      width: 100%; background: none; border: none; outline: none; color: #dbdee1; font-size: 14px; font-family: inherit;
     }
+
+    /* 설정 모달창 스타일 */
+    #settings-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
+    }
+    .modal-box {
+      background-color: #313338; padding: 24px; border-radius: 8px; width: 400px;
+      display: flex; flex-direction: column; gap: 16px; color: #dbdee1; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .modal-box h3 { margin: 0 0 8px 0; color: #f2f3f5; text-align: center; }
+    .modal-group { display: flex; flex-direction: column; gap: 6px; }
+    .modal-group label { font-size: 12px; font-weight: bold; color: #949ba4; }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .modal-btn-cancel { background-color: #4e5058; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .modal-btn-save { background-color: #5865f2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .modal-btn-save:hover { background-color: #4752c4; }
   </style>
 </head>
 <body>
@@ -146,6 +161,28 @@
     </div>
   </div>
 
+  <div id="settings-modal">
+    <div class="modal-box">
+      <h3>사용자 설정</h3>
+      <div class="modal-group">
+        <label>프로필 사진 (아이콘 설정)</label>
+        <input type="file" id="settings-avatar-input" accept="image/*" style="font-size: 12px; color: #dbdee1;">
+      </div>
+      <div class="modal-group">
+        <label>닉네임</label>
+        <input type="text" id="settings-nickname-input" class="auth-input" placeholder="새 닉네임 입력">
+      </div>
+      <div class="modal-group">
+        <label>새 비밀번호 (변경시에만 입력)</label>
+        <input type="password" id="settings-password-input" class="auth-input" placeholder="변경할 비밀번호">
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn-cancel" id="settings-cancel-btn">취소</button>
+        <button class="modal-btn-save" id="settings-save-btn">저장</button>
+      </div>
+    </div>
+  </div>
+
   <div id="app-container">
     <div id="sidebar">
       <div class="sidebar-header">채널 목록</div>
@@ -154,8 +191,14 @@
         <div class="channel-item" data-channel="random"># random</div>
       </div>
       <div class="user-profile">
-        <div class="user-info" id="user-display-name">유저</div>
-        <button class="logout-btn" id="logout-btn">로그아웃</button>
+        <div class="user-info">
+          <div id="user-avatar-preview" style="width: 32px; height: 32px; border-radius: 50%; background-color: #5865f2; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">U</div>
+          <span id="user-display-name">유저</span>
+        </div>
+        <div class="user-actions">
+          <button class="action-icon-btn" id="open-settings-btn" title="설정">⚙️</button>
+          <button class="logout-btn" id="logout-btn">로그아웃</button>
+        </div>
       </div>
     </div>
 
@@ -175,17 +218,18 @@
   <script src="/socket.io/socket.io.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // 고정된 파이어베이스 설정값 반영
     const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+      apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+      authDomain: "lilac-13935.firebaseapp.com",
+      projectId: "lilac-13935",
+      storageBucket: "lilac-13935.firebasestorage.app",
+      messagingSenderId: "485552650048",
+      appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+      measurementId: "G-81H89P6F6E"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -234,7 +278,7 @@
       });
     }
 
-    // 3. 인증 상태 관리 (로그인 / 비로그인 UI 분기)
+    // 3. 인증 상태 관리
     onAuthStateChanged(auth, (user) => {
       const authContainer = document.getElementById('auth-container');
       const appContainer = document.getElementById('app-container');
@@ -244,11 +288,7 @@
         if (authContainer) authContainer.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         
-        const displayNameElem = document.getElementById('user-display-name');
-        if (displayNameElem) {
-          displayNameElem.innerText = user.email ? user.email.split('@')[0] : '유저';
-        }
-        
+        updateUserUI(user);
         socket.emit('join channel', currentChannel);
       } else {
         currentUser = null;
@@ -256,6 +296,30 @@
         if (appContainer) appContainer.style.display = 'none';
       }
     });
+
+    function updateUserUI(user) {
+      const displayNameElem = document.getElementById('user-display-name');
+      const avatarPreview = document.getElementById('user-avatar-preview');
+      const nicknameInput = document.getElementById('settings-nickname-input');
+      
+      const name = user.displayName || (user.email ? user.email.split('@')[0] : '유저');
+      if (displayNameElem) displayNameElem.innerText = name;
+      if (nicknameInput) nicknameInput.value = name;
+
+      if (avatarPreview) {
+        avatarPreview.innerHTML = '';
+        if (user.photoURL) {
+          const img = document.createElement('img');
+          img.src = user.photoURL;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          avatarPreview.appendChild(img);
+        } else {
+          avatarPreview.innerText = name[0].toUpperCase();
+        }
+      }
+    }
 
     // 4. 로그인 / 회원가입 화면 토글
     let isSignupMode = false;
@@ -272,7 +336,6 @@
       });
     }
 
-    // 5. 로그인 및 회원가입 버튼 클릭 이벤트 처리
     if (authActionBtn) {
       authActionBtn.addEventListener('click', async () => {
         const emailInput = document.getElementById('auth-email');
@@ -298,11 +361,70 @@
       });
     }
 
-    // 6. 로그아웃 버튼
+    // 5. 로그아웃 버튼
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
         signOut(auth);
+      });
+    }
+
+    // 6. 설정 모달창 열기/닫기 및 정보 수정 기능
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+    const settingsSaveBtn = document.getElementById('settings-save-btn');
+
+    if (openSettingsBtn) {
+      openSettingsBtn.addEventListener('click', () => {
+        if (settingsModal) settingsModal.style.display = 'flex';
+      });
+    }
+
+    if (settingsCancelBtn) {
+      settingsCancelBtn.addEventListener('click', () => {
+        if (settingsModal) settingsModal.style.display = 'none';
+      });
+    }
+
+    if (settingsSaveBtn) {
+      settingsSaveBtn.addEventListener('click', async () => {
+        if (!auth.currentUser) return;
+        const newNickname = document.getElementById('settings-nickname-input').value.trim();
+        const newPassword = document.getElementById('settings-password-input').value.trim();
+        const avatarFileInput = document.getElementById('settings-avatar-input');
+
+        try {
+          let photoURL = auth.currentUser.photoURL;
+
+          // 프로필 사진 파일이 선택된 경우 Base64 변환
+          if (avatarFileInput && avatarFileInput.files && avatarFileInput.files[0]) {
+            const file = avatarFileInput.files[0];
+            photoURL = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result);
+              reader.readAsDataURL(file);
+            });
+          }
+
+          // Firebase 프로필 업데이트 (닉네임, 사진)
+          await updateProfile(auth.currentUser, {
+            displayName: newNickname || auth.currentUser.displayName,
+            photoURL: photoURL
+          });
+
+          // 비밀번호 변경 요청이 있는 경우
+          if (newPassword) {
+            await updatePassword(auth.currentUser, newPassword);
+          }
+
+          alert('설정이 성공적으로 저장되었습니다.');
+          updateUserUI(auth.currentUser);
+          if (settingsModal) settingsModal.style.display = 'none';
+          document.getElementById('settings-password-input').value = '';
+        } catch (error) {
+          alert('설정 저장 실패: ' + error.message);
+        }
       });
     }
 
@@ -347,10 +469,13 @@
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
           
+          const nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
+          
           socket.emit('chat message', {
             channel: currentChannel,
             uid: currentUser.uid,
-            nickname: currentUser.email ? currentUser.email.split('@')[0] : '유저',
+            nickname: nickname,
+            photoURL: currentUser.photoURL || null,
             text: text,
             date: now.toLocaleDateString(),
             time: timeStr
@@ -364,12 +489,20 @@
       const messagesDiv = document.getElementById('messages');
       if (!messagesDiv) return;
 
+      const isMe = currentUser && msg.uid === currentUser.uid;
+
       const row = document.createElement('div');
-      row.className = 'message-row';
+      row.className = `message-row ${isMe ? 'is-me' : ''}`;
 
       const avatar = document.createElement('div');
       avatar.className = 'message-avatar';
-      avatar.innerText = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
+      if (msg.photoURL) {
+        const img = document.createElement('img');
+        img.src = msg.photoURL;
+        avatar.appendChild(img);
+      } else {
+        avatar.innerText = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
+      }
       row.appendChild(avatar);
 
       const content = document.createElement('div');
