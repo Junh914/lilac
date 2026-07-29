@@ -84,7 +84,7 @@
     .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
     .user-actions { display: flex; gap: 6px; align-items: center; }
     
-    /* 설정 버튼 디자인 (이미지 활용 및 마우스 호버 시 밝아짐) */
+    /* 설정 버튼 디자인 (setting-icon.png 활용 및 마우스 호버 시 밝아짐) */
     .action-icon-btn {
       background: none; border: none; cursor: pointer; padding: 4px;
       width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
@@ -136,7 +136,7 @@
     }
     
     /* 메시지 행 스타일 */
-    .message-row { display: flex; gap: 12px; width: 100%; margin-top: 4px; align-items: flex-end; }
+    .message-row { display: flex; gap: 12px; width: 100%; margin-top: 2px; align-items: flex-end; }
     .message-row.is-me { flex-direction: row-reverse; text-align: right; }
     
     .message-avatar { width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; margin-bottom: 2px; }
@@ -147,16 +147,15 @@
 
     .message-header { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 2px; }
     .message-header .username { font-weight: 600; color: #f2f3f5; }
-    .message-header .timestamp { font-size: 11px; color: #949ba4; }
     
     .bubble-wrapper { display: flex; align-items: flex-end; gap: 6px; width: fit-content; }
     .message-row.is-me .bubble-wrapper { flex-direction: row-reverse; }
     
-    /* 말풍선 스타일 */
+    /* 말풍선 스타일 (사진 참조 깔끔한 둥근 형태 반영) */
     .message-bubble {
       background-color: #2b2d31;
       color: #dbdee1;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 12px;
       font-size: 14px;
       line-height: 1.4;
@@ -272,7 +271,7 @@
         </div>
         <div class="user-actions">
           <button class="action-icon-btn" id="open-settings-btn" title="설정">
-            <img src="setting-icon.jpg" alt="설정">
+            <img src="setting-icon.png" alt="설정">
           </button>
           <button class="logout-btn" id="logout-btn">로그아웃</button>
         </div>
@@ -314,6 +313,7 @@
     let currentUser = null;
     let currentChannel = 'general';
     let lastDate = null;
+    let messageHistoryCache = []; // 분 단위 그룹화 검증용 캐시
 
     // 초기 너비 비율 설정 (6.4 : 30)
     window.addEventListener('DOMContentLoaded', () => {
@@ -544,9 +544,13 @@
         const channelTitle = document.getElementById('current-channel-title');
         if (channelTitle) channelTitle.innerText = `# ${currentChannel}`;
         
+        const messageInput = document.getElementById('message-input');
+        if (messageInput) messageInput.placeholder = `#${currentChannel}에 메시지 보내기`;
+
         const messagesDiv = document.getElementById('messages');
         if (messagesDiv) messagesDiv.innerHTML = '';
         lastDate = null;
+        messageHistoryCache = [];
         
         socket.emit('join channel', currentChannel);
       });
@@ -557,13 +561,14 @@
       if (messagesDiv && data.history) {
         messagesDiv.innerHTML = '';
         lastDate = null;
-        data.history.forEach(msg => appendMessage(msg));
+        messageHistoryCache = [];
+        data.history.forEach(msg => renderAndCacheMessage(msg));
       }
     });
 
     socket.on('chat message', (msg) => {
       if (msg.channel === currentChannel) {
-        appendMessage(msg);
+        renderAndCacheMessage(msg);
       }
     });
 
@@ -577,11 +582,12 @@
           
           let hours = now.getHours();
           const minutes = now.getMinutes().toString().padStart(2, '0');
-          const ampm = hours >= 12 ? '오후' : '오전';
+          const ampm = hours >= 12 ? '오후' : '전'; // 간소화 방지 위해 정확히 표현
+          const ampmText = hours >= 12 ? '오후' : '오전';
           hours = hours % 12;
           hours = hours ? hours : 12;
           
-          const timeStr = `${ampm} ${hours}:${minutes}`;
+          const timeStr = `${ampmText} ${hours}:${minutes}`;
           const dateStr = now.toLocaleDateString();
           
           const nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
@@ -600,35 +606,81 @@
       });
     }
 
-    // 메시지 렌더링 (모두 말풍선 처리, 내가 보낸 메시지는 아이디 미표시)
-    function appendMessage(msg) {
+    // 분 단위 그룹화 및 렌더링 함수
+    function renderAndCacheMessage(msg) {
+      messageHistoryCache.push(msg);
+      redrawMessages();
+    }
+
+    function redrawMessages() {
+      const messagesDiv = document.getElementById('messages');
+      if (!messagesDiv) return;
+      messagesDiv.innerHTML = '';
+      lastDate = null;
+
+      for (let i = 0; i < messageHistoryCache.length; i++) {
+        const msg = messageHistoryCache[i];
+        
+        // 날짜 변경선 처리
+        if (msg.date && msg.date !== lastDate) {
+          lastDate = msg.date;
+          const divider = document.createElement('div');
+          divider.className = 'date-divider';
+          const span = document.createElement('span');
+          span.innerText = msg.date;
+          divider.appendChild(span);
+          messagesDiv.appendChild(divider);
+        }
+
+        // 분 단위 및 사용자 동일 여부 확인 (그룹화 조건: 같은 사용자 & 같은 분 & 같은 채널)
+        let showHeaderOrAvatar = true;
+        let showTime = true;
+
+        if (i > 0) {
+          const prevMsg = messageHistoryCache[i - 1];
+          if (prevMsg.uid === msg.uid && prevMsg.time === msg.time && prevMsg.channel === msg.channel) {
+            showHeaderOrAvatar = false; // 같은 분에 연속 보낸 메시지면 아바타/이름 생략
+          }
+        }
+
+        if (i < messageHistoryCache.length - 1) {
+          const nextMsg = messageHistoryCache[i + 1];
+          if (nextMsg.uid === msg.uid && nextMsg.time === msg.time && nextMsg.channel === msg.channel) {
+            showTime = false; // 다음 메시지와 분이 같으면 현재 메시지에는 시간 표시 안 함 (가장 아래쪽에만 표시)
+          }
+        }
+
+        appendMessageDOM(msg, showHeaderOrAvatar, showTime);
+      }
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function appendMessageDOM(msg, showHeaderOrAvatar, showTime) {
       const messagesDiv = document.getElementById('messages');
       if (!messagesDiv) return;
 
-      if (msg.date && msg.date !== lastDate) {
-        lastDate = msg.date;
-        const divider = document.createElement('div');
-        divider.className = 'date-divider';
-        const span = document.createElement('span');
-        span.innerText = msg.date;
-        divider.appendChild(span);
-        messagesDiv.appendChild(divider);
-      }
-
       const isMe = currentUser && msg.uid === currentUser.uid;
+      const isRandom = msg.channel === 'random';
+
       const row = document.createElement('div');
       row.className = `message-row ${isMe ? 'is-me' : ''}`;
 
-      // 타인의 경우 아바타 표시
+      // 타인의 경우 아바타 표시 (Random 채널인 경우 공통 익명 아바타 '?')
       if (!isMe) {
         const avatar = document.createElement('div');
         avatar.className = 'message-avatar';
-        if (msg.photoURL) {
-          const img = document.createElement('img');
-          img.src = msg.photoURL;
-          avatar.appendChild(img);
+        if (showHeaderOrAvatar) {
+          if (isRandom) {
+            avatar.innerText = '?';
+          } else if (msg.photoURL) {
+            const img = document.createElement('img');
+            img.src = msg.photoURL;
+            avatar.appendChild(img);
+          } else {
+            avatar.innerText = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
+          }
         } else {
-          avatar.innerText = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
+          avatar.style.visibility = 'hidden'; // 묶인 메시지 영역의 아바타 숨김 공간 확보
         }
         row.appendChild(avatar);
       }
@@ -636,14 +688,14 @@
       const content = document.createElement('div');
       content.className = 'message-content';
 
-      // 타인의 경우에만 아이디(닉네임) 헤더 표시 (내가 보낸 메시지는 아이디 표시 안 함)
-      if (!isMe) {
+      // 첫 메시지이거나 그룹 시작일 때만 헤더(닉네임) 표시 (Random 채널은 '익명' 고정)
+      if (!isMe && showHeaderOrAvatar) {
         const header = document.createElement('div');
         header.className = 'message-header';
         
         const username = document.createElement('span');
         username.className = 'username';
-        username.innerText = msg.nickname || '익명';
+        username.innerText = isRandom ? '익명' : (msg.nickname || '익명');
         header.appendChild(username);
 
         content.appendChild(header);
@@ -657,15 +709,17 @@
       bubble.innerText = msg.text || '';
       bubbleWrapper.appendChild(bubble);
 
-      const timestamp = document.createElement('span');
-      timestamp.className = 'timestamp timestamp-inline';
-      timestamp.innerText = msg.time || '';
-      bubbleWrapper.appendChild(timestamp);
+      // 분 단위 보낸 시간이 같다면 가장 아래쪽(마지막) 메시지에만 시간 표시
+      if (showTime) {
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp timestamp-inline';
+        timestamp.innerText = msg.time || '';
+        bubbleWrapper.appendChild(timestamp);
+      }
 
       content.appendChild(bubbleWrapper);
       row.appendChild(content);
       messagesDiv.appendChild(row);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
   </script>
 </body>
