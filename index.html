@@ -57,10 +57,17 @@
       position: relative;
     }
 
+    /* 헤더 및 토글 버튼 */
     .chat-header {
       height: 48px; border-bottom: 1px solid #1f2023; display: flex; align-items: center;
-      padding: 0 16px; font-weight: bold; color: #f2f3f5;
+      justify-content: space-between; padding: 0 16px; font-weight: bold; color: #f2f3f5;
     }
+    .chat-header-right { display: flex; align-items: center; }
+    .toggle-sidebar-btn {
+      background: none; border: none; color: #b5bac1; cursor: pointer; font-size: 16px;
+      padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    }
+    .toggle-sidebar-btn:hover { background-color: #35373c; color: #dbdee1; }
 
     .chat-messages {
       flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px;
@@ -80,10 +87,9 @@
     .message-header span { color: #f2f3f5; font-weight: 500; }
     .timestamp { font-size: 10px; color: #949ba4; margin-top: 2px; }
 
-    /* 말풍선 & Shift+Enter 렌더링을 위한 white-space 설정 */
     .message-bubble {
       background-color: #383a40; padding: 8px 12px; border-radius: 8px; word-break: break-all;
-      color: #dbdee1; font-size: 14px; line-height: 1.4; white-space: pre-wrap;
+      color: #dbdee1; font-size: 14px; line-height: 1.4;
     }
     .mine .message-bubble { background-color: #5865f2; color: white; cursor: context-menu; }
     
@@ -91,14 +97,9 @@
     .reply-badge {
       font-size: 12px; color: #b5bac1; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;
     }
-    .reply-badge::before {
-      content: '┌';
-      color: #4e5058;
-      font-weight: bold;
-      margin-right: 4px;
-    }
+    .reply-badge::before { content: '┌'; color: #4e5058; font-weight: bold; margin-right: 4px; }
 
-    /* 호버 시 나타나는 액션 버튼 (답장 등) */
+    /* 호버 시 나타나는 액션 버튼 */
     .message-actions {
       display: none; position: absolute; top: -15px; right: 0;
       background-color: #2b2d31; border: 1px solid #1f2023; border-radius: 4px;
@@ -114,24 +115,22 @@
 
     /* 답장 중인 상태 표시창 */
     #replying-bar {
-      display: none; padding: 8px 16px; background-color: #2b2d31; color: #b5bac1;
+      display: none; padding: 6px 12px; background-color: #2b2d31; color: #b5bac1;
       font-size: 12px; border-top-left-radius: 8px; border-top-right-radius: 8px;
       justify-content: space-between; align-items: center; margin: 0 16px;
     }
     #cancel-reply { cursor: pointer; color: #dbdee1; font-weight: bold; }
 
-    /* 채팅 입력 영역 (textarea) */
+    /* 채팅 입력 영역 (단일 input) */
     .chat-input-area { padding: 0 16px 24px 16px; display: flex; flex-direction: column; }
     .chat-input-wrapper {
       background-color: #383a40; border-radius: 8px; padding: 10px 16px;
-      display: flex; align-items: center; min-height: 44px;
+      display: flex; align-items: center;
     }
-    /* 상단 radius 조정 (답장 바가 있을 경우) */
     .reply-active .chat-input-wrapper { border-top-left-radius: 0; border-top-right-radius: 0; }
     
-    .chat-input-wrapper textarea {
+    .chat-input-wrapper input {
       flex: 1; background: none; border: none; color: #dbdee1; font-size: 14px; outline: none;
-      resize: none; overflow-y: hidden; font-family: inherit; line-height: 1.4; padding: 0;
     }
 
     /* 우측 사이드바 & 크기 조절 (Resizer) */
@@ -152,15 +151,13 @@
     .user-avatar { width: 32px; height: 32px; border-radius: 50%; background-color: #4e5058; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
     .user-name { font-size: 14px; color: #dbdee1; }
 
-    /* 커스텀 우클릭 메뉴 (Context Menu) */
+    /* 커스텀 우클릭 메뉴 */
     #context-menu {
       display: none; position: fixed; z-index: 1000; background-color: #111214;
       border-radius: 4px; padding: 6px 0; min-width: 160px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.4);
     }
-    .context-menu-item {
-      padding: 8px 12px; color: #b5bac1; font-size: 14px; cursor: pointer; transition: 0.1s;
-    }
+    .context-menu-item { padding: 8px 12px; color: #b5bac1; font-size: 14px; cursor: pointer; transition: 0.1s; }
     .context-menu-item:hover { background-color: #5865f2; color: white; }
     .context-menu-item.danger:hover { background-color: #da373c; }
   </style>
@@ -189,25 +186,27 @@
     </div>
 
     <div class="main-chat">
-      <div class="chat-header"># 자유-채팅방</div>
+      <div class="chat-header">
+        <span># 자유-채팅방</span>
+        <div class="chat-header-right">
+          <button class="toggle-sidebar-btn" id="toggle-sidebar" title="참여자 목록 접기/열기">👥</button>
+        </div>
+      </div>
       <div class="chat-messages" id="messages"></div>
       
-      <!-- 하단 입력창 영역 -->
       <div class="chat-input-area" id="input-area">
         <div id="replying-bar">
           <span id="replying-to-text"></span>
           <span id="cancel-reply">✕</span>
         </div>
         <div class="chat-input-wrapper">
-          <textarea id="message-input" rows="1" placeholder="#자유-채팅방에 메시지 보내기"></textarea>
+          <input type="text" id="message-input" placeholder="#자유-채팅방에 메시지 보내기">
         </div>
       </div>
     </div>
 
-    <!-- 우측 사이드바 크기 조절 바 -->
     <div class="resizer" id="drag-resizer"></div>
 
-    <!-- 우측 사이드바 -->
     <div class="sidebar-right" id="sidebar-right">
       <div class="user-list-title">온라인 — 1</div>
       <div class="user-item">
@@ -228,24 +227,34 @@
     const messageInput = document.getElementById('message-input');
     const messages = document.getElementById('messages');
     
-    // UI Elements
     const replyingBar = document.getElementById('replying-bar');
     const replyingToText = document.getElementById('replying-to-text');
     const cancelReplyBtn = document.getElementById('cancel-reply');
     const inputArea = document.getElementById('input-area');
     
-    // Sidebar Resizer Elements
     const resizer = document.getElementById('drag-resizer');
     const sidebarRight = document.getElementById('sidebar-right');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 
     let myNickname = '';
     let lastSenderId = null;
     let lastMinuteStr = null;
     let lastTimeElem = null;
-    
-    // State variables
     let currentReplyTarget = null;
     let contextTargetMessage = null;
+
+    // --- 타이틀 알림 기능 ---
+    let unreadCount = 0;
+    let isWindowFocused = true;
+
+    window.addEventListener('focus', () => {
+      isWindowFocused = true;
+      unreadCount = 0;
+      document.title = 'Chat';
+    });
+    window.addEventListener('blur', () => {
+      isWindowFocused = false;
+    });
 
     // --- 로그인 로직 ---
     joinBtn.addEventListener('click', () => {
@@ -262,40 +271,35 @@
       messageInput.focus();
     });
 
-    // --- 텍스트 자동 높이 조절 & Shift+Enter 전송 처리 ---
-    messageInput.addEventListener('input', function() {
-      this.style.height = 'auto'; // 높이 초기화
-      let newHeight = this.scrollHeight;
-      if (newHeight > 200) newHeight = 200; // 최대 높이 제한
-      this.style.height = newHeight + 'px';
-      
-      // 스크롤바 처리 (최대 높이 초과 시)
-      this.style.overflowY = this.scrollHeight > 200 ? 'auto' : 'hidden';
+    // --- 사이드바 접기/열기 (Toggle) ---
+    toggleSidebarBtn.addEventListener('click', () => {
+      if (sidebarRight.style.display === 'none') {
+        sidebarRight.style.display = 'flex';
+        resizer.style.display = 'block';
+      } else {
+        sidebarRight.style.display = 'none';
+        resizer.style.display = 'none';
+      }
     });
 
-    messageInput.addEventListener('keydown', (e) => {
-      // Shift 없이 Enter만 누르면 메시지 전송
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // 기본 줄바꿈 방지
+    // --- 엔터 키 메시지 전송 로직 ---
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && messageInput.value.trim() !== '') {
         const text = messageInput.value.trim();
-        if (text !== '') {
-          const now = new Date();
-          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-          
-          socket.emit('chat message', { 
-            id: 'msg-' + Date.now(), // 고유 아이디 생성
-            text: text, 
-            nickname: myNickname, 
-            uid: socket.id, 
-            time: timeStr,
-            replyTo: currentReplyTarget 
-          });
-          
-          // 전송 후 입력창 초기화
-          messageInput.value = '';
-          messageInput.style.height = 'auto';
-          cancelReply(); // 답장 상태 해제
-        }
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        socket.emit('chat message', { 
+          id: 'msg-' + Date.now(), 
+          text: text, 
+          nickname: myNickname, 
+          uid: socket.id, 
+          time: timeStr,
+          replyTo: currentReplyTarget 
+        });
+        
+        messageInput.value = '';
+        cancelReply(); 
       }
     });
 
@@ -304,11 +308,15 @@
       const isMine = msg.nickname === myNickname;
       const isConsecutive = (msg.uid === lastSenderId && msg.time === lastMinuteStr && !msg.replyTo);
 
+      if (!isMine && !isWindowFocused) {
+        unreadCount++;
+        document.title = `(${unreadCount}) Chat`;
+      }
+
       const row = document.createElement('div');
       row.className = `message-row ${isMine ? 'mine' : ''} ${isConsecutive ? 'consecutive' : ''}`;
-      row.id = msg.id; // 메시지 DOM 요소에 ID 부여 (수정/삭제용)
+      row.id = msg.id; 
 
-      // 좌측 아바타
       if (!isMine) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
@@ -326,7 +334,6 @@
       const content = document.createElement('div');
       content.className = 'message-content';
 
-      // 닉네임 헤더
       if (!isMine && !isConsecutive) {
         const header = document.createElement('div');
         header.className = 'message-header';
@@ -334,7 +341,6 @@
         content.appendChild(header);
       }
 
-      // 답장 대상 표시 뱃지
       if (msg.replyTo) {
         const replyBadge = document.createElement('div');
         replyBadge.className = 'reply-badge';
@@ -342,13 +348,11 @@
         content.appendChild(replyBadge);
       }
 
-      // 메시지 내용 (말풍선)
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
       bubble.innerText = msg.text;
       content.appendChild(bubble);
 
-      // 시간 표시
       const timeDiv = document.createElement('div');
       timeDiv.className = 'timestamp';
       timeDiv.innerText = msg.time;
@@ -363,12 +367,11 @@
         timeContainer.appendChild(timeDiv);
       }
 
-      // 💡 호버 시 나타나는 [답장] 버튼 (Actions)
       const actions = document.createElement('div');
       actions.className = 'message-actions';
       const replyBtn = document.createElement('button');
       replyBtn.className = 'action-btn';
-      replyBtn.innerHTML = '↪️'; // 답장 아이콘
+      replyBtn.innerHTML = '↪️';
       replyBtn.title = "답장";
       replyBtn.onclick = () => setReplyTarget(msg.nickname);
       actions.appendChild(replyBtn);
@@ -399,17 +402,13 @@
     }
     cancelReplyBtn.addEventListener('click', cancelReply);
 
-    // --- 우클릭(Context Menu) 수정 및 삭제 기능 ---
+    // --- 우클릭 메뉴 (수정/삭제) ---
     const contextMenu = document.getElementById('context-menu');
-    
     document.addEventListener('contextmenu', (e) => {
-      // 내가 보낸 메시지(파란색 말풍선) 위에서 우클릭했는지 확인
       const bubble = e.target.closest('.mine .message-bubble');
       if (bubble) {
-        e.preventDefault(); // 기본 브라우저 우클릭 메뉴 차단
-        contextTargetMessage = bubble.closest('.message-row'); // 수정/삭제 대상 Row 저장
-        
-        // 메뉴 위치 설정
+        e.preventDefault();
+        contextTargetMessage = bubble.closest('.message-row'); 
         contextMenu.style.display = 'block';
         contextMenu.style.left = `${e.pageX}px`;
         contextMenu.style.top = `${e.pageY}px`;
@@ -418,37 +417,26 @@
       }
     });
 
-    // 화면의 다른 곳을 클릭하면 우클릭 메뉴 숨기기
-    document.addEventListener('click', () => {
-      contextMenu.style.display = 'none';
-    });
+    document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
 
-    // 메시지 수정 클릭
     document.getElementById('menu-edit').addEventListener('click', () => {
       if (!contextTargetMessage) return;
       const bubble = contextTargetMessage.querySelector('.message-bubble');
-      const currentText = bubble.innerText;
-      
-      // prompt를 이용한 간단한 수정 창 (추후 인라인 인풋으로 고도화 가능)
-      const newText = prompt("메시지 수정:", currentText);
+      const newText = prompt("메시지 수정:", bubble.innerText);
       if (newText !== null && newText.trim() !== '') {
         bubble.innerText = newText.trim();
-        // 실제 서버 통신 시: socket.emit('edit message', { id: contextTargetMessage.id, text: newText.trim() });
       }
     });
 
-    // 메시지 삭제 클릭
     document.getElementById('menu-delete').addEventListener('click', () => {
       if (!contextTargetMessage) return;
       if (confirm("정말로 이 메시지를 삭제하시겠습니까?")) {
-        contextTargetMessage.remove(); // DOM에서 삭제
-        // 실제 서버 통신 시: socket.emit('delete message', contextTargetMessage.id);
+        contextTargetMessage.remove();
       }
     });
 
-    // --- 우측 사이드바 크기 조절 (Resizer) 기능 ---
+    // --- 사이드바 크기 조절 (Resizer) ---
     let isDragging = false;
-
     resizer.addEventListener('mousedown', () => {
       isDragging = true;
       resizer.classList.add('dragging');
@@ -457,11 +445,7 @@
 
     window.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
-      
-      // 마우스 위치 기반으로 새 너비 계산 (화면 오른쪽 끝 기준)
       const newWidth = window.innerWidth - e.clientX - resizer.offsetWidth;
-      
-      // CSS에 지정된 min(150), max(500) 범위 내에서만 조절
       if (newWidth >= 150 && newWidth <= 500) {
         sidebarRight.style.width = newWidth + 'px';
       }
