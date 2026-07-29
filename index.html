@@ -568,9 +568,18 @@
         messageHistoryCache = [];
 
         querySnapshot.forEach((doc) => {
-          renderAndCacheMessage(doc.data());
+          const msg = doc.data();
+          // 중복 방지 체크 후 캐시에 추가
+          if (!messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text)) {
+            messageHistoryCache.push(msg);
+          }
         });
-        console.log(`[채팅 로드 완료] 총 ${querySnapshot.size}개의 메시지를 불러왔습니다.`);
+
+        // 항상 timestamp 기준으로 완벽한 오름차순(시간순) 정렬 보장
+        messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
+        redrawMessages();
+
+        console.log(`[채팅 로드 완료] 총 ${messageHistoryCache.length}개의 메시지를 불러왔습니다.`);
       } catch (error) {
         console.error("❌ 채팅 내역 불러오기 오류:", error);
         alert("채팅 내역을 불러오지 못했습니다. F12 콘솔창의 에러 메시지를 확인해주세요.");
@@ -666,7 +675,13 @@
     }
 
     function renderAndCacheMessage(msg) {
-      messageHistoryCache.push(msg);
+      // 중복 메시지 수신 방지
+      const exists = messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text);
+      if (!exists) {
+        messageHistoryCache.push(msg);
+      }
+      // 수신 및 추가될 때마다 시간순(timestamp 오름차순) 정렬 보장
+      messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
       redrawMessages();
     }
 
