@@ -3,210 +3,245 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
+  <title>Lilac Chat</title>
   <style>
-    /* =========================================
-       원본 디자인 유지 영역
-       ========================================= */
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0; height: 100vh;
       background-color: #313338; color: #dbdee1;
       font-family: 'Noto Sans KR', sans-serif, system-ui;
       display: flex; justify-content: center; align-items: center;
-      user-select: none;
+      user-select: none; overflow: hidden;
     }
 
-    ::-webkit-scrollbar { width: 9.5px; height: 9.5px; }
-    ::-webkit-scrollbar-track { background: #2b2d31; border-radius: 5px; }
-    ::-webkit-scrollbar-thumb { background: #80848e; border-radius: 5px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #2b2d31; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #80848e; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #b5bac1; }
 
+    /* 로그인/회원가입 화면 컨테이너 */
     #auth-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      width: 100%; height: 100vh; background-color: #313338;
-      position: absolute; top: 0; left: 0; z-index: 10;
+      width: 100vw; height: 100vh; background-color: #313338;
+      position: absolute; top: 0; left: 0; z-index: 100;
     }
     .auth-box {
-      background-color: #2b2d31; padding: 30px; border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 350px; display: flex; flex-direction: column;
+      background-color: #2b2d31; padding: 32px; border-radius: 8px;
+      width: 380px; display: flex; flex-direction: column; gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4); text-align: center;
     }
-    .auth-box h2 { color: #f2f3f5; margin-top: 0; text-align: center; }
+    .auth-box h2 { color: #f2f3f5; margin-top: 0; margin-bottom: 10px; font-size: 22px; }
     .auth-box input {
-      background-color: #1e1f22; border: none; border-radius: 4px;
-      padding: 10px; color: #dbdee1; font-size: 14px; margin-bottom: 15px; outline: none;
+      padding: 12px; border-radius: 4px; border: 1px solid #1e1f22;
+      background-color: #1e1f22; color: #dbdee1; font-size: 14px; outline: none;
     }
+    .auth-box input:focus { border-color: #5865f2; }
     .auth-box button {
       background-color: #5865f2; color: white; border: none; border-radius: 4px;
-      padding: 10px; font-size: 14px; font-weight: bold; cursor: pointer;
+      padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 4px;
+      transition: background-color 0.2s;
     }
     .auth-box button:hover { background-color: #4752c4; }
+    .toggle-link-text {
+      color: #949ba4; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block;
+    }
+    .toggle-link-text:hover { color: #f2f3f5; }
 
-    /* 메인 앱 레이아웃 */
+    /* 메인 앱 레이아웃 (디스코드 스타일) */
     #app-container {
       display: none; width: 100vw; height: 100vh; background-color: #313338;
       flex-direction: row; overflow: hidden;
     }
 
-    /* 좌측 채널/서버 목록 */
+    /* 좌측 채널/서버 목록 사이드바 */
     .sidebar-left {
       width: 240px; background-color: #2b2d31; display: flex; flex-direction: column; flex-shrink: 0;
+      border-right: 1px solid #1f2023;
     }
-
-    /* 메인 채팅 영역 */
-    .main-chat {
-      flex: 1; display: flex; flex-direction: column; background-color: #313338; min-width: 0;
-      position: relative; /* 추가된 액션 버튼 등을 위해 */
+    .sidebar-header {
+      height: 48px; padding: 0 16px; display: flex; align-items: center;
+      font-weight: bold; font-size: 16px; color: #f2f3f5; border-bottom: 1px solid #1f2023;
     }
+    .channel-list { flex: 1; padding: 12px; overflow-y: auto; }
+    .channel-item {
+      padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer; font-weight: 500; font-size: 14px;
+    }
+    .channel-item.active { background-color: #404249; color: #f2f3f5; }
 
+    /* 하단 유저 패널 */
+    .user-panel {
+      height: 60px; background-color: #232428; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0;
+    }
+    .user-profile-info { display: flex; align-items: center; gap: 8px; overflow: hidden; cursor: pointer; flex: 1; min-width: 0; }
+    .user-avatar-small {
+      width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 14px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .user-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name-tag { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .user-display-name { font-size: 13px; font-weight: bold; color: #f2f3f5; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .user-status { font-size: 11px; color: #23a55a; }
+
+    .settings-icon-btn {
+      background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .settings-icon-btn:hover { background-color: #35373c; }
+    .settings-icon-btn img { width: 18px; height: 18px; object-fit: contain; filter: brightness(0.8); }
+
+    /* 중앙 채팅 영역 */
+    .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #313338; min-width: 0; }
     .chat-header {
       height: 48px; border-bottom: 1px solid #1f2023; display: flex; align-items: center;
-      padding: 0 16px; font-weight: bold; color: #f2f3f5;
-      justify-content: space-between; /* 추가: 토글 버튼 배치를 위해 */
+      justify-content: space-between; padding: 0 16px; font-weight: bold; color: #f2f3f5; font-size: 15px;
     }
-    
-    .chat-header-right { display: flex; align-items: center; } /* 추가 */
-
-    .chat-messages {
-      flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px;
+    .chat-header-right { display: flex; align-items: center; gap: 10px; }
+    .toggle-sidebar-btn {
+      background: none; border: none; color: #949ba4; cursor: pointer; font-size: 13px;
+      padding: 4px 8px; border-radius: 4px; font-weight: 500;
     }
+    .toggle-sidebar-btn:hover { background-color: #35373c; color: #dbdee1; }
 
-    .message-row { display: flex; gap: 16px; width: 100%; margin-top: 12px; position: relative; } /* position 추가 */
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* 날짜 구분선 */
+    .date-divider {
+      display: flex; align-items: center; text-align: center; margin: 16px 0; color: #949ba4; font-size: 12px; font-weight: 600;
+    }
+    .date-divider::before, .date-divider::after { content: ''; flex: 1; border-bottom: 1px solid #3f444b; }
+    .date-divider span { padding: 4px 12px; background-color: #2b2d31; border: 1px solid #3f444b; border-radius: 12px; margin: 0 10px; color: #dbdee1; }
+
+    /* 메시지 행 스타일 */
+    .message-row { display: flex; gap: 16px; width: 100%; }
     .message-row.mine { flex-direction: row-reverse; }
-    .message-row.consecutive { margin-top: 2px; }
 
     .avatar {
       width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2;
-      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 15px; flex-shrink: 0; overflow: hidden;
     }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .time-container { display: flex; flex-direction: column; max-width: 70%; position: relative; }
-    .message-header { font-size: 14px; margin-bottom: 4px; display: flex; gap: 8px; align-items: baseline; }
-    .message-header span { color: #f2f3f5; font-weight: 500; }
-    .timestamp { font-size: 10px; color: #949ba4; margin-top: 2px; }
-
+    .message-content { display: flex; flex-direction: column; gap: 4px; max-width: 70%; }
+    .message-header { font-size: 13px; color: #f2f3f5; font-weight: bold; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
       background-color: #383a40; padding: 8px 12px; border-radius: 8px; word-break: break-all;
       color: #dbdee1; font-size: 14px; line-height: 1.4;
-      white-space: pre-wrap; /* 추가: 줄바꿈 표시를 위해 */
     }
-    .mine .message-bubble { background-color: #5865f2; color: white; cursor: context-menu; } /* 커서 추가 */
+    .mine .message-bubble { background-color: #5865f2; color: white; }
 
-    .chat-input-area { padding: 0 16px 24px 16px; display: flex; flex-direction: column; }
+    .time-container { display: flex; align-items: flex-end; }
+    .timestamp { font-size: 10px; color: #949ba4; margin: 0 4px 2px 4px; white-space: nowrap; }
+
+    /* 하단 입력창 */
+    .chat-input-area { padding: 0 16px 24px 16px; }
     .chat-input-wrapper {
       background-color: #383a40; border-radius: 8px; padding: 10px 16px;
       display: flex; align-items: center;
     }
-    
-    /* =========================================
-       기능 추가를 위한 CSS (기존 디자인 덮어쓰지 않음)
-       ========================================= */
-    /* 기존 input을 textarea로 변경한 것에 대한 스타일 호환 */
-    .chat-input-wrapper textarea {
+    .chat-input-wrapper input {
       flex: 1; background: none; border: none; color: #dbdee1; font-size: 14px; outline: none;
-      resize: none; overflow-y: hidden; font-family: inherit; line-height: 1.4; padding: 0;
     }
-    
-    .reply-active .chat-input-wrapper { border-top-left-radius: 0; border-top-right-radius: 0; }
 
-    /* 사이드바 토글 버튼 */
-    .toggle-sidebar-btn {
-      background: none; border: none; color: #b5bac1; cursor: pointer; font-size: 16px;
-      padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-    }
-    .toggle-sidebar-btn:hover { background-color: #35373c; color: #dbdee1; }
-
-    /* 우측 사이드바 및 리사이저 */
-    .sidebar-right {
-      width: 240px; min-width: 150px; max-width: 500px; /* 리사이징 제한 추가 */
-      background-color: #2b2d31; display: flex; flex-direction: column; flex-shrink: 0;
-      padding: 16px; overflow-y: auto;
-    }
-    .user-list-title { font-size: 12px; font-weight: bold; color: #949ba4; margin-bottom: 8px; }
-    .user-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 4px; cursor: pointer; }
-    .user-item:hover { background-color: #35373c; }
-    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background-color: #4e5058; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
-    .user-name { font-size: 14px; color: #dbdee1; }
-
-    .resizer {
-      width: 5px; background-color: transparent; cursor: ew-resize; flex-shrink: 0;
-      transition: background-color 0.2s; z-index: 5;
-    }
+    /* 우측 온라인/참여자 목록 사이드바 */
+    .resizer { width: 4px; background-color: #1f2023; cursor: ew-resize; flex-shrink: 0; transition: background-color 0.2s; }
     .resizer:hover, .resizer.dragging { background-color: #5865f2; }
 
-    /* 답장 기능 UI */
-    .reply-badge {
-      font-size: 12px; color: #b5bac1; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;
+    .sidebar-right {
+      width: 240px; min-width: 150px; max-width: 400px;
+      background-color: #2b2d31; display: flex; flex-direction: column; flex-shrink: 0;
+      padding: 16px; overflow-y: auto; border-left: 1px solid #1f2023;
     }
-    .reply-badge::before { content: '┌'; color: #4e5058; font-weight: bold; margin-right: 4px; }
-    
-    .message-actions {
-      display: none; position: absolute; top: -15px; right: 0;
-      background-color: #2b2d31; border: 1px solid #1f2023; border-radius: 4px;
-      padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 5;
-    }
-    .message-row.mine .message-actions { right: auto; left: 0; }
-    .message-row:hover .message-actions { display: flex; }
-    .action-btn {
-      background: none; border: none; color: #b5bac1; cursor: pointer;
-      padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-    }
-    .action-btn:hover { background-color: #404249; color: #dbdee1; }
+    .user-list-title { font-size: 12px; font-weight: bold; color: #949ba4; margin-bottom: 8px; text-transform: uppercase; }
+    .user-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+    .user-item:hover { background-color: #35373c; }
+    .user-avatar-tiny { width: 32px; height: 32px; border-radius: 50%; background-color: #4e5058; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; overflow: hidden; }
+    .user-avatar-tiny img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name-tiny { font-size: 13px; color: #dbdee1; font-weight: 500; }
 
-    #replying-bar {
-      display: none; padding: 6px 12px; background-color: #2b2d31; color: #b5bac1;
-      font-size: 12px; border-top-left-radius: 8px; border-top-right-radius: 8px;
-      justify-content: space-between; align-items: center; margin: 0 16px;
+    /* 사용자 설정 모달 */
+    #settings-modal {
+      display: flex; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
     }
-    #cancel-reply { cursor: pointer; color: #dbdee1; font-weight: bold; }
-
-    /* 커스텀 우클릭 메뉴 */
-    #context-menu {
-      display: none; position: fixed; z-index: 1000; background-color: #111214;
-      border-radius: 4px; padding: 6px 0; min-width: 160px; box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    #settings-modal.show { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background-color: #313338; width: 480px; border-radius: 8px; padding: 24px;
+      display: flex; flex-direction: column; gap: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      position: relative;
     }
-    .context-menu-item { padding: 8px 12px; color: #b5bac1; font-size: 14px; cursor: pointer; transition: 0.1s; }
-    .context-menu-item:hover { background-color: #5865f2; color: white; }
-    .context-menu-item.danger:hover { background-color: #da373c; }
+    .modal-header { color: #f2f3f5; font-size: 18px; font-weight: bold; }
+    .modal-close-btn {
+      position: absolute; top: 16px; right: 16px; background: none; border: none;
+      color: #949ba4; font-size: 20px; cursor: pointer; width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .modal-close-btn:hover { color: #f2f3f5; background-color: rgba(255,255,255,0.05); }
+    .settings-group { display: flex; flex-direction: column; gap: 8px; }
+    .settings-group label { font-size: 12px; font-weight: bold; color: #b5bac1; text-transform: uppercase; }
+    .settings-group input {
+      padding: 10px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 14px; outline: none;
+    }
+    .file-upload-label {
+      display: block; padding: 10px; background-color: #2b2d31; border: 1px solid #3f444b;
+      border-radius: 4px; text-align: center; color: #dbdee1; cursor: pointer; font-size: 13px;
+    }
+    .file-upload-label:hover { background-color: #35373c; border-color: #5865f2; }
+    .settings-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .btn-save { background-color: #5865f2; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-save:hover { background-color: #4752c4; }
+    .btn-logout-modal { background-color: #ed4245; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-logout-modal:hover { background-color: #c9383b; }
   </style>
 </head>
 <body>
 
-  <div id="context-menu">
-    <div class="context-menu-item" id="menu-edit">메시지 수정</div>
-    <div class="context-menu-item danger" id="menu-delete">메시지 삭제</div>
-  </div>
-
   <div id="auth-container">
     <div class="auth-box">
-      <h2>채팅방 입장</h2>
-      <input type="text" id="nickname-input" placeholder="사용할 닉네임을 입력하세요">
-      <button id="join-btn">입장하기</button>
+      <h2 id="auth-title">로그인</h2>
+      <input type="email" id="email-input" placeholder="이메일 입력">
+      <input type="text" id="nickname-input" style="display: none;" placeholder="사용할 닉네임 입력">
+      <input type="password" id="password-input" placeholder="비밀번호 입력">
+      <button type="button" id="auth-action-btn">로그인</button>
+      <div><span class="toggle-link-text" id="toggle-mode-btn">계정이 없으신가요? 회원가입</span></div>
     </div>
   </div>
 
   <div id="app-container">
     <div class="sidebar-left">
-      <div style="padding: 16px; font-weight: bold; color: white; border-bottom: 1px solid #1f2023;">서버 목록</div>
+      <div class="sidebar-header">Lilac Server</div>
+      <div class="channel-list">
+        <div class="channel-item active"># 자유채팅방</div>
+      </div>
+      <div class="user-panel">
+        <div class="user-profile-info" id="open-settings-btn2">
+          <div class="user-avatar-small" id="sidebar-avatar">유</div>
+          <div class="user-name-tag">
+            <span class="user-display-name" id="sidebar-nickname">닉네임</span>
+            <span class="user-status">온라인</span>
+          </div>
+        </div>
+        <button class="settings-icon-btn" id="open-settings-btn" title="설정">
+          <img src="setting-icon.png" alt="설정">
+        </button>
+      </div>
     </div>
 
-    <div class="main-chat">
+    <div class="chat-area">
       <div class="chat-header">
-        <span># 자유-채팅방</span>
+        <span># 자유채팅방</span>
         <div class="chat-header-right">
-          <button class="toggle-sidebar-btn" id="toggle-sidebar" title="참여자 목록 접기/열기">👥</button>
+          <button class="toggle-sidebar-btn" id="toggle-sidebar">👥 참여자 목록</button>
         </div>
       </div>
-      
-      <div class="chat-messages" id="messages"></div>
-      
-      <div class="chat-input-area" id="input-area">
-        <div id="replying-bar">
-          <span id="replying-to-text"></span>
-          <span id="cancel-reply">✕</span>
-        </div>
-        <div class="chat-input-wrapper">
-          <textarea id="message-input" rows="1" placeholder="#자유-채팅방에 메시지 보내기"></textarea>
+      <div class="chat-main">
+        <div class="chat-messages" id="messages"></div>
+        <div class="chat-input-area">
+          <form id="message-form" class="chat-input-wrapper">
+            <input type="text" id="message-input" placeholder="#자유채팅방에 메시지 보내기" autocomplete="off">
+          </form>
         </div>
       </div>
     </div>
@@ -214,129 +249,302 @@
     <div class="resizer" id="drag-resizer"></div>
 
     <div class="sidebar-right" id="sidebar-right">
-      <div class="user-list-title">온라인 — 1</div>
+      <div class="user-list-title">온라인 — <span id="online-count">1</span></div>
       <div class="user-item">
-        <div class="user-avatar" id="my-profile-icon">유</div>
-        <div class="user-name" id="my-profile-name">사용자</div>
+        <div class="user-avatar-tiny" id="my-profile-icon">유</div>
+        <div class="user-name-tiny" id="my-profile-name">사용자</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="close-settings-btn">&times;</button>
+      <div class="modal-header">사용자 설정</div>
+      
+      <div class="settings-group">
+        <label>프로필 사진 파일 선택</label>
+        <label for="setting-file-input" class="file-upload-label" id="file-label-text">컴퓨터에서 이미지 선택...</label>
+        <input type="file" id="setting-file-input" accept="image/*" style="display: none;">
+      </div>
+
+      <div class="settings-group">
+        <label>닉네임 변경</label>
+        <input type="text" id="setting-nickname-input" placeholder="변경할 닉네임 입력">
+      </div>
+
+      <div class="settings-group">
+        <label>비밀번호 변경 (변경시에만 입력)</label>
+        <input type="password" id="setting-password-input" placeholder="새 비밀번호 입력">
+      </div>
+
+      <div class="settings-buttons">
+        <button type="button" class="btn-logout-modal" id="modal-logout-btn">로그아웃</button>
+        <button type="button" class="btn-save" id="save-settings-btn">저장하기</button>
       </div>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    const authContainer = document.getElementById('auth-container');
-    const appContainer = document.getElementById('app-container');
-    const nicknameInput = document.getElementById('nickname-input');
-    const joinBtn = document.getElementById('join-btn');
-    const messageInput = document.getElementById('message-input');
-    const messages = document.getElementById('messages');
-    
-    // 추가 기능용 변수 및 요소
-    const replyingBar = document.getElementById('replying-bar');
-    const replyingToText = document.getElementById('replying-to-text');
-    const cancelReplyBtn = document.getElementById('cancel-reply');
-    const inputArea = document.getElementById('input-area');
-    const resizer = document.getElementById('drag-resizer');
-    const sidebarRight = document.getElementById('sidebar-right');
-    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-    const contextMenu = document.getElementById('context-menu');
-    
-    let myNickname = '';
+    const firebaseConfig = {
+      apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+      authDomain: "lilac-13935.firebaseapp.com",
+      projectId: "lilac-13935",
+      storageBucket: "lilac-13935.firebasestorage.app",
+      messagingSenderId: "485552650048",
+      appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+      measurementId: "G-81H89P6F6E"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const socket = io({ transports: ['websocket'] });
+
+    let isLoginMode = true;
+    let currentUser = null;
+    let selectedImageBase64 = null;
+
+    let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
     let lastTimeElem = null;
-    
-    let currentReplyTarget = null;
-    let contextTargetMessage = null;
-    let unreadCount = 0;
-    let isWindowFocused = true;
 
-    // --- 알림 (타이틀) ---
-    window.addEventListener('focus', () => { isWindowFocused = true; unreadCount = 0; document.title = 'Chat'; });
-    window.addEventListener('blur', () => { isWindowFocused = false; });
+    // DOM 요소 캐싱
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const authTitle = document.getElementById('auth-title');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const nicknameInput = document.getElementById('nickname-input');
+    const authActionBtn = document.getElementById('auth-action-btn');
+    const toggleModeBtn = document.getElementById('toggle-mode-btn');
 
-    // --- 로그인 ---
-    joinBtn.addEventListener('click', () => {
-      const name = nicknameInput.value.trim();
-      if (!name) return alert('닉네임을 입력해주세요!');
-      myNickname = name;
-      
-      document.getElementById('my-profile-name').innerText = myNickname;
-      document.getElementById('my-profile-icon').innerText = myNickname[0].toUpperCase();
+    const messages = document.getElementById('messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
 
-      authContainer.style.display = 'none';
-      appContainer.style.display = 'flex';
-      socket.emit('join', myNickname);
-      messageInput.focus();
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const openSettingsBtn2 = document.getElementById('open-settings-btn2');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const modalLogoutBtn = document.getElementById('modal-logout-btn');
+    const fileInput = document.getElementById('setting-file-input');
+    const fileLabelText = document.getElementById('file-label-text');
+
+    const sidebarRight = document.getElementById('sidebar-right');
+    const resizer = document.getElementById('drag-resizer');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+
+    // 1. 로그인 / 회원가입 모드 토글
+    toggleModeBtn.addEventListener('click', () => {
+      isLoginMode = !isLoginMode;
+      authTitle.innerText = isLoginMode ? "로그인" : "회원가입";
+      authActionBtn.innerText = isLoginMode ? "로그인" : "회원가입 완료";
+      toggleModeBtn.innerText = isLoginMode ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인";
+      nicknameInput.style.display = isLoginMode ? "none" : "block";
     });
 
-    // --- 사이드바 토글 ---
-    toggleSidebarBtn.addEventListener('click', () => {
-      if (sidebarRight.style.display === 'none') {
-        sidebarRight.style.display = 'flex';
-        resizer.style.display = 'block';
-      } else {
-        sidebarRight.style.display = 'none';
-        resizer.style.display = 'none';
+    // 2. Firebase 인증 액션 (로그인 및 회원가입)
+    authActionBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const pw = passwordInput.value.trim();
+      const nick = nicknameInput.value.trim();
+
+      if (!email || !pw || (!isLoginMode && !nick)) {
+        return alert('모든 필드를 올바르게 입력해주세요.');
       }
-    });
 
-    // --- 텍스트 자동 높이 조절 & Shift+Enter ---
-    messageInput.addEventListener('input', function() {
-      this.style.height = 'auto'; 
-      let newHeight = this.scrollHeight;
-      if (newHeight > 200) newHeight = 200; 
-      this.style.height = newHeight + 'px';
-      this.style.overflowY = this.scrollHeight > 200 ? 'auto' : 'hidden';
-    });
-
-    messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); 
-        const text = messageInput.value.trim();
-        if (text !== '') {
-          const now = new Date();
-          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-          
-          socket.emit('chat message', { 
-            id: 'msg-' + Date.now(), 
-            text: text, 
-            nickname: myNickname, 
-            uid: socket.id, 
-            time: timeStr,
-            replyTo: currentReplyTarget 
-          });
-          
-          messageInput.value = '';
-          messageInput.style.height = 'auto';
-          cancelReply(); 
+      try {
+        if (isLoginMode) {
+          await signInWithEmailAndPassword(auth, email, pw);
+        } else {
+          const cred = await createUserWithEmailAndPassword(auth, email, pw);
+          await updateProfile(cred.user, { displayName: nick });
+          await auth.currentUser.reload();
+          alert('회원가입이 완료되었습니다!');
         }
+      } catch (e) {
+        alert('인증 오류: ' + e.message);
       }
     });
 
-    // --- 메시지 렌더링 ---
-    socket.addEventListener('chat message', (msg) => {
-      const isMine = msg.nickname === myNickname;
-      const isConsecutive = (msg.uid === lastSenderId && msg.time === lastMinuteStr && !msg.replyTo);
-
-      if (!isMine && !isWindowFocused) {
-        unreadCount++;
-        document.title = `(${unreadCount}) Chat`;
+    // 3. 인증 상태 감지 (Firebase Auth State Listener)
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        authContainer.style.display = 'none';
+        appContainer.style.display = 'flex';
+        updateUserUI(user);
+        
+        // 소켓 서버에 로그인 정보 전달
+        socket.emit('join channel', {
+          uid: user.uid,
+          nickname: user.displayName || '익명'
+        });
+      } else {
+        currentUser = null;
+        appContainer.style.display = 'none';
+        authContainer.style.display = 'flex';
+        messages.innerHTML = '';
       }
+    });
+
+    // 유저 UI 업데이트 함수
+    function updateUserUI(user) {
+      const name = user.displayName || '익명';
+      const photo = user.photoURL;
+
+      document.getElementById('sidebar-nickname').innerText = name;
+      document.getElementById('my-profile-name').innerText = name;
+
+      const avatarElem = document.getElementById('sidebar-avatar');
+      const profileIcon = document.getElementById('my-profile-icon');
+
+      if (photo) {
+        avatarElem.innerHTML = `<img src="${photo}" alt="아바타">`;
+        profileIcon.innerHTML = `<img src="${photo}" alt="아바타">`;
+      } else {
+        const initial = name[0].toUpperCase();
+        avatarElem.innerText = initial;
+        profileIcon.innerText = initial;
+      }
+    }
+
+    // 4. 설정 모달창 열고 닫기
+    openSettingsBtn.addEventListener('click', openModal);
+    openSettingsBtn2.addEventListener('click', openModal);
+    closeSettingsBtn.addEventListener('click', closeModal);
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeModal(); });
+
+    function openModal() {
+      if (!currentUser) return;
+      document.getElementById('setting-nickname-input').value = currentUser.displayName || '';
+      document.getElementById('setting-password-input').value = '';
+      fileLabelText.innerText = currentUser.photoURL ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택...";
+      selectedImageBase64 = currentUser.photoURL || null;
+      settingsModal.classList.add('show');
+    }
+
+    function closeModal() {
+      settingsModal.classList.remove('show');
+    }
+
+    // 프로필 이미지 파일 선택 처리
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      fileLabelText.innerText = file.name;
+
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        selectedImageBase64 = uploadEvent.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // 설정 저장 (닉네임, 비밀번호, 프로필 사진 변경)
+    saveSettingsBtn.addEventListener('click', async () => {
+      const newNick = document.getElementById('setting-nickname-input').value.trim();
+      const newPassword = document.getElementById('setting-password-input').value.trim();
+
+      try {
+        const updateData = {};
+        if (newNick) updateData.displayName = newNick;
+        if (selectedImageBase64 !== undefined) updateData.photoURL = selectedImageBase64;
+
+        if (Object.keys(updateData).length > 0) {
+          await updateProfile(auth.currentUser, updateData);
+        }
+
+        if (newPassword) {
+          await updatePassword(auth.currentUser, newPassword);
+        }
+
+        await auth.currentUser.reload();
+        currentUser = auth.currentUser;
+        updateUserUI(currentUser);
+        
+        alert('변경사항이 성공적으로 저장되었습니다.');
+        closeModal();
+      } catch (e) {
+        alert('저장 실패: ' + e.message);
+      }
+    });
+
+    modalLogoutBtn.addEventListener('click', () => {
+      closeModal();
+      signOut(auth);
+    });
+
+    // 5. 메시지 전송 기능
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text || !currentUser) return;
+
+      const now = new Date();
+      const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      const dateStr = now.toLocaleDateString('ko-KR', dateOptions);
+      const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+      socket.emit('chat message', {
+        channel: 'general',
+        uid: currentUser.uid,
+        nickname: currentUser.displayName || '익명',
+        photoURL: currentUser.photoURL || null,
+        text: text,
+        date: dateStr,
+        time: timeStr
+      });
+
+      messageInput.value = '';
+    });
+
+    // 6. 소켓 메시지 수신 및 화면 렌더링
+    socket.on('chat history', (data) => {
+      messages.innerHTML = '';
+      lastDateStr = null; lastSenderId = null; lastMinuteStr = null; lastTimeElem = null;
+      if (data && data.history) {
+        data.history.forEach(msg => appendMessage(msg));
+      }
+    });
+
+    socket.on('chat message', (msg) => {
+      appendMessage(msg);
+    });
+
+    function appendMessage(msg) {
+      if (!currentUser) return;
+      const isMine = (msg.uid === currentUser.uid);
+
+      if (msg.date !== lastDateStr) {
+        const divider = document.createElement('div');
+        divider.className = 'date-divider';
+        divider.innerHTML = `<span>${msg.date}</span>`;
+        messages.appendChild(divider);
+        
+        lastDateStr = msg.date;
+        lastSenderId = null;
+        lastMinuteStr = null;
+      }
+
+      const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time);
 
       const row = document.createElement('div');
-      row.className = `message-row ${isMine ? 'mine' : ''} ${isConsecutive ? 'consecutive' : ''}`;
-      row.id = msg.id; 
+      row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
 
       if (!isMine) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
-        if (!isConsecutive) {
-          avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
+        if (msg.photoURL) {
+          avatar.innerHTML = `<img src="${msg.photoURL}" alt="아바타">`;
         } else {
-          avatar.style.visibility = 'hidden';
+          avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
         }
         row.appendChild(avatar);
       }
@@ -350,16 +558,8 @@
       if (!isMine && !isConsecutive) {
         const header = document.createElement('div');
         header.className = 'message-header';
-        header.innerHTML = `<span>${msg.nickname}</span>`;
+        header.innerText = msg.nickname;
         content.appendChild(header);
-      }
-
-      // 답장 UI
-      if (msg.replyTo) {
-        const replyBadge = document.createElement('div');
-        replyBadge.className = 'reply-badge';
-        replyBadge.innerText = `${msg.replyTo}님에게 답장`;
-        content.appendChild(replyBadge);
       }
 
       const bubble = document.createElement('div');
@@ -371,8 +571,10 @@
       timeDiv.className = 'timestamp';
       timeDiv.innerText = msg.time;
 
-      if (isConsecutive && lastTimeElem) lastTimeElem.style.display = 'none';
-
+      if (isConsecutive && lastTimeElem) {
+        lastTimeElem.style.display = 'none';
+      }
+      
       if (isMine) {
         timeContainer.appendChild(timeDiv);
         timeContainer.appendChild(content);
@@ -381,17 +583,6 @@
         timeContainer.appendChild(timeDiv);
       }
 
-      // 호버 답장 버튼
-      const actions = document.createElement('div');
-      actions.className = 'message-actions';
-      const replyBtn = document.createElement('button');
-      replyBtn.className = 'action-btn';
-      replyBtn.innerHTML = '↪️';
-      replyBtn.title = "답장";
-      replyBtn.onclick = () => setReplyTarget(msg.nickname);
-      actions.appendChild(replyBtn);
-
-      timeContainer.appendChild(actions);
       row.appendChild(timeContainer);
       messages.appendChild(row);
       messages.scrollTop = messages.scrollHeight;
@@ -399,59 +590,11 @@
       lastTimeElem = timeDiv;
       lastSenderId = msg.uid;
       lastMinuteStr = msg.time;
-    });
-
-    // --- 답장 설정 ---
-    function setReplyTarget(targetNickname) {
-      currentReplyTarget = targetNickname;
-      replyingToText.innerHTML = `<strong>${targetNickname}</strong>님에게 답장하는 중`;
-      replyingBar.style.display = 'flex';
-      inputArea.classList.add('reply-active');
-      messageInput.focus();
     }
-    
-    function cancelReply() {
-      currentReplyTarget = null;
-      replyingBar.style.display = 'none';
-      inputArea.classList.remove('reply-active');
-    }
-    cancelReplyBtn.addEventListener('click', cancelReply);
 
-    // --- 우클릭 메뉴 ---
-    document.addEventListener('contextmenu', (e) => {
-      const bubble = e.target.closest('.mine .message-bubble');
-      if (bubble) {
-        e.preventDefault();
-        contextTargetMessage = bubble.closest('.message-row'); 
-        contextMenu.style.display = 'block';
-        contextMenu.style.left = `${e.pageX}px`;
-        contextMenu.style.top = `${e.pageY}px`;
-      } else {
-        contextMenu.style.display = 'none';
-      }
-    });
-
-    document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
-
-    document.getElementById('menu-edit').addEventListener('click', () => {
-      if (!contextTargetMessage) return;
-      const bubble = contextTargetMessage.querySelector('.message-bubble');
-      const newText = prompt("메시지 수정:", bubble.innerText);
-      if (newText !== null && newText.trim() !== '') {
-        bubble.innerText = newText.trim();
-      }
-    });
-
-    document.getElementById('menu-delete').addEventListener('click', () => {
-      if (!contextTargetMessage) return;
-      if (confirm("정말로 이 메시지를 삭제하시겠습니까?")) {
-        contextTargetMessage.remove();
-      }
-    });
-
-    // --- 사이드바 리사이저 ---
+    // 7. 우측 사이드바 크기 조절 (Resizer) 기능
     let isDragging = false;
-    resizer.addEventListener('mousedown', () => {
+    resizer.addEventListener('mousedown', (e) => {
       isDragging = true;
       resizer.classList.add('dragging');
       document.body.style.cursor = 'ew-resize';
@@ -460,7 +603,7 @@
     window.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
       const newWidth = window.innerWidth - e.clientX - resizer.offsetWidth;
-      if (newWidth >= 150 && newWidth <= 500) {
+      if (newWidth >= 150 && newWidth <= 400) {
         sidebarRight.style.width = newWidth + 'px';
       }
     });
@@ -470,6 +613,17 @@
         isDragging = false;
         resizer.classList.remove('dragging');
         document.body.style.cursor = 'default';
+      }
+    });
+
+    // 8. 우측 참여자 목록 사이드바 토글 버튼 기능
+    toggleSidebarBtn.addEventListener('click', () => {
+      if (sidebarRight.style.display === 'none') {
+        sidebarRight.style.display = 'flex';
+        resizer.style.display = 'block';
+      } else {
+        sidebarRight.style.display = 'none';
+        resizer.style.display = 'none';
       }
     });
   </script>
