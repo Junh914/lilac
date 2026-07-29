@@ -78,10 +78,11 @@
     .channel-item:hover { background-color: #35373c; color: #dbdee1; }
     .channel-item.active { background-color: #404249; color: #ffffff; }
 
+    /* 유저 패널 (높이 확장 반영) */
     .user-profile {
-      padding: 8px 12px; background-color: #232428; display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background-color: #232428; display: flex; align-items: center; justify-content: space-between;
     }
-    .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
+    .user-info { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
     
     .user-actions { display: flex; align-items: center; }
     .action-icon-btn {
@@ -115,7 +116,7 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* 디스코드 스타일 날짜 변경선 CSS */
+    /* 디스코드 스타일 날짜 변경선 (년도.월.일.요일) */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
@@ -159,14 +160,21 @@
 
     .timestamp-inline { font-size: 10px; color: #949ba4; white-space: nowrap; margin-bottom: 2px; }
 
-    /* 입력창 영역 */
+    /* 입력창 및 우측 전송 버튼 영역 */
     .chat-input-area { padding: 0 16px 24px 16px; }
     .chat-input-wrapper {
-      background-color: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center;
+      background-color: #383a40; border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px;
     }
     .chat-input {
       width: 100%; background: none; border: none; outline: none; color: #dbdee1; font-size: 14px; font-family: inherit;
     }
+    .chat-send-btn {
+      background: none; border: none; cursor: pointer; color: #b5bac1;
+      display: flex; align-items: center; justify-content: center; padding: 6px;
+      border-radius: 4px; transition: color 0.2s, background-color 0.2s; flex-shrink: 0;
+    }
+    .chat-send-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.08); }
+    .chat-send-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
     /* 설정 모달창 스타일 */
     #settings-modal {
@@ -258,7 +266,7 @@
       </div>
       <div class="user-profile">
         <div class="user-info">
-          <div id="user-avatar-preview" style="width: 32px; height: 32px; border-radius: 50%; background-color: #5865f2; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">U</div>
+          <div id="user-avatar-preview" style="width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">U</div>
           <span id="user-display-name">유저</span>
         </div>
         <div class="user-actions">
@@ -279,6 +287,9 @@
       <div class="chat-input-area">
         <div class="chat-input-wrapper">
           <input type="text" id="message-input" class="chat-input" placeholder="#general에 메시지 보내기">
+          <button id="send-btn" class="chat-send-btn" title="전송">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -310,6 +321,9 @@
     let currentChannel = 'general';
     let lastDate = null;
     let messageHistoryCache = [];
+
+    // 랜덤 채널용 세션 기준 자연수 번호(99 이하) 생성 (1 ~ 99)
+    const randomChannelNum = Math.floor(Math.random() * 99) + 1;
 
     window.addEventListener('DOMContentLoaded', () => {
       const sidebar = document.getElementById('sidebar');
@@ -571,51 +585,83 @@
       }
     });
 
+    // 메시지 전송 공통 함수
+    async function handleSendMessage() {
+      const messageInput = document.getElementById('message-input');
+      if (!messageInput || messageInput.value.trim() === '') return;
+
+      if (!currentUser) {
+        alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+        return;
+      }
+      
+      const text = messageInput.value;
+      const now = new Date();
+      
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const ampmText = hours >= 12 ? '오후' : '오전';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      
+      const timeStr = `${ampmText} ${hours}:${minutes}`;
+      
+      // 년도.월.일.요일 형식 생성
+      const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const weekday = days[now.getDay()];
+      const dateStr = `${year}.${month}.${day}.${weekday}`;
+      
+      const timestamp = Date.now();
+      
+      let nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
+      let photoURL = currentUser.photoURL || null;
+
+      // 랜덤 채널인 경우 세션 기준 랜덤 자연수 번호 부여 (아바타와 닉네임 설정)
+      if (currentChannel === 'random') {
+        nickname = `익명 ${randomChannelNum}`;
+        photoURL = null; // 아바타에 번호가 들어가도록 프로필 사진 제거
+      }
+      
+      const msgData = {
+        channel: currentChannel,
+        uid: currentUser.uid,
+        nickname: nickname,
+        photoURL: photoURL,
+        text: text,
+        date: dateStr,
+        time: timeStr,
+        timestamp: timestamp
+      };
+
+      try {
+        await addDoc(collection(db, "messages"), msgData);
+        console.log("[메시지 전송 성공 및 DB 저장 완료]");
+        socket.emit('chat message', msgData);
+      } catch (error) {
+        console.error("❌ 메시지 저장 오류:", error);
+        alert("메시지 저장 중 오류가 발생했습니다.");
+      }
+
+      messageInput.value = '';
+    }
+
     const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+
     if (messageInput) {
-      messageInput.addEventListener('keypress', async (e) => {
-        if (e.key === 'Enter' && messageInput.value.trim() !== '') {
-          if (!currentUser) {
-            alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
-            return;
-          }
-          const text = messageInput.value;
-          const now = new Date();
-          
-          let hours = now.getHours();
-          const minutes = now.getMinutes().toString().padStart(2, '0');
-          const ampmText = hours >= 12 ? '오후' : '오전';
-          hours = hours % 12;
-          hours = hours ? hours : 12;
-          
-          const timeStr = `${ampmText} ${hours}:${minutes}`;
-          const dateStr = now.toLocaleDateString();
-          const timestamp = Date.now();
-          
-          const nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
-          
-          const msgData = {
-            channel: currentChannel,
-            uid: currentUser.uid,
-            nickname: nickname,
-            photoURL: currentUser.photoURL || null,
-            text: text,
-            date: dateStr,
-            time: timeStr,
-            timestamp: timestamp
-          };
-
-          try {
-            await addDoc(collection(db, "messages"), msgData);
-            console.log("[메시지 전송 성공 및 DB 저장 완료]");
-            socket.emit('chat message', msgData);
-          } catch (error) {
-            console.error("❌ 메시지 저장 오류:", error);
-            alert("메시지 저장 중 오류가 발생했습니다.");
-          }
-
-          messageInput.value = '';
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleSendMessage();
         }
+      });
+    }
+
+    if (sendBtn) {
+      sendBtn.addEventListener('click', () => {
+        handleSendMessage();
       });
     }
 
@@ -680,7 +726,9 @@
 
       if (isRandom) {
         displayNickname = msg.nickname; 
-        avatarContent = msg.nickname;
+        // 닉네임에서 숫자만 추출하여 아바타 내용으로 사용 (예: "익명 42" -> "42")
+        const numMatch = msg.nickname.match(/\d+/);
+        avatarContent = numMatch ? numMatch[0] : '익명';
       } else {
         avatarContent = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
       }
