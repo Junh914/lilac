@@ -87,9 +87,10 @@
     .message-header span { color: #f2f3f5; font-weight: 500; }
     .timestamp { font-size: 10px; color: #949ba4; margin-top: 2px; }
 
+    /* white-space: pre-wrap 추가하여 줄바꿈 정상 표시 */
     .message-bubble {
       background-color: #383a40; padding: 8px 12px; border-radius: 8px; word-break: break-all;
-      color: #dbdee1; font-size: 14px; line-height: 1.4;
+      color: #dbdee1; font-size: 14px; line-height: 1.4; white-space: pre-wrap; 
     }
     .mine .message-bubble { background-color: #5865f2; color: white; cursor: context-menu; }
     
@@ -121,7 +122,7 @@
     }
     #cancel-reply { cursor: pointer; color: #dbdee1; font-weight: bold; }
 
-    /* 채팅 입력 영역 (단일 input) */
+    /* 채팅 입력 영역 (textarea로 변경) */
     .chat-input-area { padding: 0 16px 24px 16px; display: flex; flex-direction: column; }
     .chat-input-wrapper {
       background-color: #383a40; border-radius: 8px; padding: 10px 16px;
@@ -129,8 +130,9 @@
     }
     .reply-active .chat-input-wrapper { border-top-left-radius: 0; border-top-right-radius: 0; }
     
-    .chat-input-wrapper input {
+    .chat-input-wrapper textarea {
       flex: 1; background: none; border: none; color: #dbdee1; font-size: 14px; outline: none;
+      resize: none; overflow-y: hidden; font-family: inherit; line-height: 1.4; padding: 0;
     }
 
     /* 우측 사이드바 & 크기 조절 (Resizer) */
@@ -200,7 +202,8 @@
           <span id="cancel-reply">✕</span>
         </div>
         <div class="chat-input-wrapper">
-          <input type="text" id="message-input" placeholder="#자유-채팅방에 메시지 보내기">
+          <!-- textarea로 변경됨 -->
+          <textarea id="message-input" rows="1" placeholder="#자유-채팅방에 메시지 보내기"></textarea>
         </div>
       </div>
     </div>
@@ -282,24 +285,36 @@
       }
     });
 
-    // --- 엔터 키 메시지 전송 로직 ---
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && messageInput.value.trim() !== '') {
+    // --- 텍스트 자동 높이 조절 & Shift+Enter ---
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto'; 
+      let newHeight = this.scrollHeight;
+      if (newHeight > 200) newHeight = 200; 
+      this.style.height = newHeight + 'px';
+      this.style.overflowY = this.scrollHeight > 200 ? 'auto' : 'hidden';
+    });
+
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); 
         const text = messageInput.value.trim();
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        
-        socket.emit('chat message', { 
-          id: 'msg-' + Date.now(), 
-          text: text, 
-          nickname: myNickname, 
-          uid: socket.id, 
-          time: timeStr,
-          replyTo: currentReplyTarget 
-        });
-        
-        messageInput.value = '';
-        cancelReply(); 
+        if (text !== '') {
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          
+          socket.emit('chat message', { 
+            id: 'msg-' + Date.now(), 
+            text: text, 
+            nickname: myNickname, 
+            uid: socket.id, 
+            time: timeStr,
+            replyTo: currentReplyTarget 
+          });
+          
+          messageInput.value = '';
+          messageInput.style.height = 'auto'; // 높이 초기화
+          cancelReply(); 
+        }
       }
     });
 
