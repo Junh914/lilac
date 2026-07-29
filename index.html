@@ -115,7 +115,7 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* 날짜 변경선 디자인 */
+    /* 디스코드 스타일 날짜 변경선 CSS */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
@@ -126,7 +126,7 @@
       border-top: 1px solid #3f4147; z-index: 1;
     }
     .date-divider span {
-      background-color: #313338; padding: 0 12px;
+      background-color: #313338; padding: 0 8px;
       position: relative; z-index: 2; margin: 0 auto;
       border-radius: 8px;
     }
@@ -282,6 +282,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
@@ -295,6 +296,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const socket = io();
 
     let currentUser = null;
@@ -350,7 +352,7 @@
         if (appContainer) appContainer.style.display = 'flex';
         
         updateUserUI(user);
-        socket.emit('join channel', currentChannel);
+        loadChannelHistory(currentChannel);
       } else {
         currentUser = null;
         if (authContainer) authContainer.style.display = 'flex';
@@ -505,6 +507,7 @@
       });
     }
 
+    // 채널 선택 이벤트
     document.querySelectorAll('.channel-item').forEach(item => {
       item.addEventListener('click', (e) => {
         document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
@@ -522,20 +525,33 @@
         lastDate = null;
         messageHistoryCache = [];
         
-        socket.emit('join channel', currentChannel);
+        loadChannelHistory(currentChannel);
       });
     });
 
-    socket.on('chat history', (data) => {
-      const messagesDiv = document.getElementById('messages');
-      if (messagesDiv && data.history) {
-        messagesDiv.innerHTML = '';
+    // Firebase Firestore 전체 대화 불러오기
+    async function loadChannelHistory(channel) {
+      try {
+        const q = query(
+          collection(db, "chats"),
+          where("channel", "==", channel),
+          orderBy("timestamp", "asc")
+        );
+        const querySnapshot = await getDocs(q);
+        const messagesDiv = document.getElementById('messages');
+        if (messagesDiv) messagesDiv.innerHTML = '';
         lastDate = null;
         messageHistoryCache = [];
-        data.history.forEach(msg => renderAndCacheMessage(msg));
-      }
-    });
 
+        querySnapshot.forEach((doc) => {
+          renderAndCacheMessage(doc.data());
+        });
+      } catch (error) {
+        console.error("채팅 내역 불러오기 오류:", error);
+      }
+    }
+
+    // 실시간 메시지 수신
     socket.on('chat message', (msg) => {
       if (msg.channel === currentChannel) {
         renderAndCacheMessage(msg);
@@ -544,7 +560,7 @@
 
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
-      messageInput.addEventListener('keypress', (e) => {
+      messageInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter' && messageInput.value.trim() !== '') {
           if (!currentUser) return;
           const text = messageInput.value;
@@ -558,18 +574,28 @@
           
           const timeStr = `${ampmText} ${hours}:${minutes}`;
           const dateStr = now.toLocaleDateString();
+          const timestamp = Date.now();
           
           const nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
           
-          socket.emit('chat message', {
+          const msgData = {
             channel: currentChannel,
             uid: currentUser.uid,
             nickname: nickname,
             photoURL: currentUser.photoURL || null,
             text: text,
             date: dateStr,
-            time: timeStr
-          });
+            time: timeStr,
+            timestamp: timestamp
+          };
+
+          try {
+            await addDoc(collection(db, "chats"), msgData);
+            socket.emit('chat message', msgData);
+          } catch (error) {
+            console.error("메시지 저장 오류:", error);
+          }
+
           messageInput.value = '';
         }
       });
@@ -635,7 +661,7 @@
       let avatarContent = '';
 
       if (isRandom) {
-        displayNickname = msg.nickname; // 서버에서 부여된 999 이하의 랜덤 번호
+        displayNickname = msg.nickname; 
         avatarContent = msg.nickname;
       } else {
         avatarContent = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
