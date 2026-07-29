@@ -83,7 +83,6 @@
     }
     .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
     
-    /* 유저패널 우측: 로그아웃 제거 및 설정 버튼 배치, 크기 축소 */
     .user-actions { display: flex; align-items: center; }
     .action-icon-btn {
       background: none; border: none; cursor: pointer; padding: 4px;
@@ -116,7 +115,7 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* 날짜 변경선 디자인 */
+    /* 날짜 변경선 디자인 (제공된 이미지 규격 반영) */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
@@ -148,7 +147,6 @@
     .bubble-wrapper { display: flex; align-items: flex-end; gap: 6px; width: fit-content; }
     .message-row.is-me .bubble-wrapper { flex-direction: row-reverse; }
     
-    /* 사진과 완벽히 일치하는 말풍선 디자인 */
     .message-bubble {
       background-color: #2b2d31;
       color: #dbdee1;
@@ -181,9 +179,7 @@
       background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
       opacity: 0; transition: opacity 0.15s ease-in-out;
     }
-    #settings-modal.active {
-      opacity: 1;
-    }
+    #settings-modal.active { opacity: 1; }
     .modal-box {
       background-color: #313338; padding: 40px; border-radius: 12px; width: 520px;
       display: flex; flex-direction: column; gap: 24px; color: #dbdee1; box-shadow: 0 12px 36px rgba(0,0,0,0.6);
@@ -208,7 +204,6 @@
     .modal-file-label:hover { border-color: #5865f2; background-color: #2b2d31; color: #f2f3f5; }
     .modal-file-input { display: none; }
 
-    /* 설정 팝업 내 저장과 로그아웃 버튼 크기를 글씨보다 약간만 더 여유 있게 컴팩트하게 설정 */
     .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
     .modal-btn-save { background-color: #5865f2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
     .modal-btn-save:hover { background-color: #4752c4; }
@@ -312,16 +307,6 @@
     let lastDate = null;
     let messageHistoryCache = [];
 
-    // 유저별 Random 채널 고정 자연수(999 이하) 매핑 헬퍼
-    function getRandomNaturalNumberForUid(uid) {
-      let hash = 0;
-      for (let i = 0; i < uid.length; i++) {
-        hash = uid.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return Math.abs(hash) % 1000; // 0 ~ 999 사이의 자연수
-    }
-
-    // 초기 너비 비율 설정 (6.4 : 30)
     window.addEventListener('DOMContentLoaded', () => {
       const sidebar = document.getElementById('sidebar');
       const totalWidth = window.innerWidth;
@@ -331,7 +316,6 @@
       }
     });
 
-    // 사이드바 리사이저 드래그 기능
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.getElementById('sidebar');
     let isResizing = false;
@@ -361,7 +345,6 @@
       });
     }
 
-    // 인증 상태 관리
     onAuthStateChanged(auth, (user) => {
       const authContainer = document.getElementById('auth-container');
       const appContainer = document.getElementById('app-container');
@@ -394,9 +377,6 @@
         if (user.photoURL) {
           const img = document.createElement('img');
           img.src = user.photoURL;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
           avatarPreview.appendChild(img);
         } else {
           avatarPreview.innerText = name[0].toUpperCase();
@@ -404,7 +384,6 @@
       }
     }
 
-    // 로그인 / 회원가입 화면 토글
     let isSignupMode = false;
     const authTitle = document.getElementById('auth-title');
     const authActionBtn = document.getElementById('auth-action-btn');
@@ -444,7 +423,6 @@
       });
     }
 
-    // 로그아웃 핸들러 (설정 팝업 내에서 실행)
     const modalLogoutBtn = document.getElementById('modal-logout-btn');
     if (modalLogoutBtn) {
       modalLogoutBtn.addEventListener('click', () => {
@@ -453,7 +431,6 @@
       });
     }
 
-    // 설정 모달 관련
     const settingsModal = document.getElementById('settings-modal');
     const openSettingsBtn = document.getElementById('open-settings-btn');
     const settingsCloseBtn = document.getElementById('settings-close-btn');
@@ -481,9 +458,7 @@
     function closeSettingsModal() {
       if (settingsModal) {
         settingsModal.classList.remove('active');
-        setTimeout(() => {
-          settingsModal.style.display = 'none';
-        }, 150);
+        setTimeout(() => { settingsModal.style.display = 'none'; }, 150);
       }
     }
 
@@ -492,9 +467,7 @@
 
     if (settingsModal) {
       settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-          closeSettingsModal();
-        }
+        if (e.target === settingsModal) closeSettingsModal();
       });
     }
 
@@ -537,7 +510,6 @@
       });
     }
 
-    // 채널 및 소켓 통신
     document.querySelectorAll('.channel-item').forEach(item => {
       item.addEventListener('click', (e) => {
         document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
@@ -664,14 +636,12 @@
       const row = document.createElement('div');
       row.className = `message-row ${isMe ? 'is-me' : ''}`;
 
-      // #random 채널일 경우 아바타와 닉네임을 999 이하의 임의의 자연수로 부여
       let displayNickname = msg.nickname || '익명';
       let avatarContent = '';
 
       if (isRandom) {
-        const randomNum = getRandomNaturalNumberForUid(msg.uid);
-        displayNickname = String(randomNum);
-        avatarContent = String(randomNum);
+        displayNickname = msg.nickname; // 서버에서 부여된 999 이하의 랜덤 번호
+        avatarContent = msg.nickname;
       } else {
         avatarContent = msg.nickname ? msg.nickname[0].toUpperCase() : 'U';
       }
