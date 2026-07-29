@@ -348,6 +348,7 @@
 
       if (user) {
         currentUser = user;
+        console.log("로그인 성공 유저:", user.email);
         if (authContainer) authContainer.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         
@@ -355,6 +356,7 @@
         loadChannelHistory(currentChannel);
       } else {
         currentUser = null;
+        console.log("로그아웃 상태");
         if (authContainer) authContainer.style.display = 'flex';
         if (appContainer) appContainer.style.display = 'none';
       }
@@ -532,6 +534,7 @@
     // Firebase Firestore 전체 대화 불러오기
     async function loadChannelHistory(channel) {
       try {
+        console.log(`[채팅 로드] ${channel} 채널 데이터 불러오는 중...`);
         const q = query(
           collection(db, "chats"),
           where("channel", "==", channel),
@@ -546,13 +549,16 @@
         querySnapshot.forEach((doc) => {
           renderAndCacheMessage(doc.data());
         });
+        console.log(`[채팅 로드 완료] 총 ${querySnapshot.size}개의 메시지를 불러왔습니다.`);
       } catch (error) {
-        console.error("채팅 내역 불러오기 오류:", error);
+        console.error("❌ 채팅 내역 불러오기 오류:", error);
+        alert("채팅 내역을 불러오지 못했습니다. F12 콘솔창의 에러 메시지(인덱스 생성 링크 등)를 확인해주세요.");
       }
     }
 
     // 실시간 메시지 수신
     socket.on('chat message', (msg) => {
+      console.log("[실시간 메시지 수신]", msg);
       if (msg.channel === currentChannel) {
         renderAndCacheMessage(msg);
       }
@@ -562,7 +568,10 @@
     if (messageInput) {
       messageInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter' && messageInput.value.trim() !== '') {
-          if (!currentUser) return;
+          if (!currentUser) {
+            alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+            return;
+          }
           const text = messageInput.value;
           const now = new Date();
           
@@ -591,9 +600,11 @@
 
           try {
             await addDoc(collection(db, "chats"), msgData);
+            console.log("[메시지 전송 성공 및 DB 저장 완료]");
             socket.emit('chat message', msgData);
           } catch (error) {
-            console.error("메시지 저장 오류:", error);
+            console.error("❌ 메시지 저장 오류:", error);
+            alert("메시지 저장 중 오류가 발생했습니다.");
           }
 
           messageInput.value = '';
