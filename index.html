@@ -106,24 +106,28 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* 클래식 날짜 변경선 디자인 */
+    /* Discord 스타일 날짜 변경선 디자인 */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
-      margin: 16px 0; width: 100%;
+      margin: 24px 0; width: 100%; position: relative;
     }
-    .date-divider::before, .date-divider::after {
-      content: ''; flex: 1; border-bottom: 1px solid #3f4147;
+    .date-divider::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 50%;
+      border-top: 1px solid #3f4147; z-index: 1;
     }
-    .date-divider span { padding: 0 8px; }
+    .date-divider span {
+      background-color: #313338; padding: 0 12px;
+      position: relative; z-index: 2; margin: 0 auto;
+      border-radius: 8px;
+    }
     
-    /* 메시지 정렬 및 기본 색상 복원 스타일 */
+    /* 메시지 정렬 및 기본 스타일 */
     .message-row { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
     .message-row.is-me { flex-direction: row-reverse; text-align: right; }
     .message-row.is-me .message-content { align-items: flex-end; }
     .message-row.is-me .message-header { flex-direction: row-reverse; }
     
-    /* 내가 보낸 메시지 및 타인 메시지 공통 기본 색상(디스코드 기본 다크톤) 유지 */
     .message-row .message-bubble { background-color: transparent; color: #dbdee1; padding: 0; border-radius: 0; }
     .message-row.is-me .message-bubble { background-color: transparent; color: #dbdee1; }
 
@@ -477,7 +481,7 @@
       }
     });
 
-    // 메시지 입력 전송
+    // 메시지 입력 전송 (오전/오후 12시간제 시각 적용)
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
       messageInput.addEventListener('keypress', (e) => {
@@ -485,7 +489,14 @@
           if (!currentUser) return;
           const text = messageInput.value;
           const now = new Date();
-          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          
+          let hours = now.getHours();
+          const minutes = now.getMinutes().toString().padStart(2, '0');
+          const ampm = hours >= 12 ? '오후' : '오전';
+          hours = hours % 12;
+          hours = hours ? hours : 12; // 0시는 12시로 표시
+          
+          const timeStr = `${ampm} ${hours}:${minutes}`;
           const dateStr = now.toLocaleDateString();
           
           const nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
@@ -504,7 +515,7 @@
       });
     }
 
-    // 메시지 렌더링 및 그룹화 함수 (기존 색상 유지)
+    // 메시지 렌더링 및 그룹화 함수
     function appendMessage(msg) {
       const messagesDiv = document.getElementById('messages');
       if (!messagesDiv) return;
