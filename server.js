@@ -6,7 +6,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // 서버 리셋 시 초기화되는 익명 채널 유저별 랜덤 번호 맵
 const randomNicknames = new Map();
