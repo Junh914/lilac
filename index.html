@@ -208,6 +208,7 @@
 </head>
 <body>
 
+  <!-- 로그인 화면 -->
   <div id="auth-container">
     <div class="auth-box">
       <h2 id="auth-title">로그인</h2>
@@ -218,6 +219,7 @@
     </div>
   </div>
 
+  <!-- 설정 모달창 -->
   <div id="settings-modal">
     <div class="modal-box">
       <button class="modal-close-btn" id="settings-close-btn">×</button>
@@ -245,7 +247,9 @@
     </div>
   </div>
 
+  <!-- 메인 앱 컨테이너 -->
   <div id="app-container">
+    <!-- 좌측 사이드바 -->
     <div id="sidebar">
       <div class="sidebar-header">채널 목록</div>
       <div class="channel-list" id="channel-list">
@@ -265,8 +269,10 @@
       </div>
     </div>
 
+    <!-- 리사이저 바 -->
     <div id="sidebar-resizer"></div>
 
+    <!-- 우측 채팅 영역 -->
     <div id="chat-container">
       <div class="chat-header" id="current-channel-title"># general</div>
       <div class="chat-messages" id="messages"></div>
@@ -278,6 +284,7 @@
     </div>
   </div>
 
+  <!-- 스크립트 연동 -->
   <script src="/socket.io/socket.io.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -531,12 +538,12 @@
       });
     });
 
-    // Firebase Firestore 전체 대화 불러오기
+    // Firebase Firestore 전체 대화 불러오기 (messages 컬렉션 사용)
     async function loadChannelHistory(channel) {
       try {
         console.log(`[채팅 로드] ${channel} 채널 데이터 불러오는 중...`);
         const q = query(
-          collection(db, "chats"),
+          collection(db, "messages"),
           where("channel", "==", channel),
           orderBy("timestamp", "asc")
         );
@@ -552,7 +559,7 @@
         console.log(`[채팅 로드 완료] 총 ${querySnapshot.size}개의 메시지를 불러왔습니다.`);
       } catch (error) {
         console.error("❌ 채팅 내역 불러오기 오류:", error);
-        alert("채팅 내역을 불러오지 못했습니다. F12 콘솔창의 에러 메시지(인덱스 생성 링크 등)를 확인해주세요.");
+        alert("채팅 내역을 불러오지 못했습니다. F12 콘솔창의 에러 메시지를 확인해주세요.");
       }
     }
 
@@ -599,7 +606,7 @@
           };
 
           try {
-            await addDoc(collection(db, "chats"), msgData);
+            await addDoc(collection(db, "messages"), msgData);
             console.log("[메시지 전송 성공 및 DB 저장 완료]");
             socket.emit('chat message', msgData);
           } catch (error) {
