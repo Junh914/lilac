@@ -83,8 +83,21 @@
     }
     .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #f2f3f5; }
     .user-actions { display: flex; gap: 6px; align-items: center; }
-    .action-icon-btn { background: none; border: none; color: #949ba4; cursor: pointer; font-size: 16px; padding: 4px; }
-    .action-icon-btn:hover { color: #f2f3f5; }
+    
+    /* 설정 버튼 디자인 (이미지 활용 및 마우스 호버 시 밝아짐) */
+    .action-icon-btn {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; transition: filter 0.2s ease, background-color 0.2s ease;
+    }
+    .action-icon-btn img {
+      width: 22px; height: 22px; object-fit: contain; border-radius: 4px;
+    }
+    .action-icon-btn:hover {
+      filter: brightness(1.4);
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    
     .logout-btn { background: none; border: none; color: #949ba4; cursor: pointer; font-size: 13px; }
     .logout-btn:hover { color: #f23f43; }
 
@@ -106,7 +119,7 @@
       flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* Discord 스타일 날짜 변경선 디자인 */
+    /* 날짜 변경선 디자인 */
     .date-divider {
       display: flex; align-items: center; text-align: center;
       color: #949ba4; font-size: 12px; font-weight: 600;
@@ -122,28 +135,40 @@
       border-radius: 8px;
     }
     
-    /* 메시지 정렬 및 기본 스타일 */
-    .message-row { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
+    /* 메시지 행 스타일 */
+    .message-row { display: flex; gap: 12px; width: 100%; margin-top: 4px; align-items: flex-end; }
     .message-row.is-me { flex-direction: row-reverse; text-align: right; }
-    .message-row.is-me .message-content { align-items: flex-end; }
-    .message-row.is-me .message-header { flex-direction: row-reverse; }
     
-    .message-row .message-bubble { background-color: transparent; color: #dbdee1; padding: 0; border-radius: 0; }
-    .message-row.is-me .message-bubble { background-color: transparent; color: #dbdee1; }
-
-    .message-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; }
+    .message-avatar { width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; margin-bottom: 2px; }
     .message-avatar img { width: 100%; height: 100%; object-fit: cover; }
     
-    .message-content { display: flex; flex-direction: column; gap: 4px; flex: 1; max-width: 70%; }
-    .message-header { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .message-content { display: flex; flex-direction: column; gap: 2px; max-width: 70%; }
+    .message-row.is-me .message-content { align-items: flex-end; }
+
+    .message-header { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 2px; }
     .message-header .username { font-weight: 600; color: #f2f3f5; }
-    .message-header .timestamp { font-size: 12px; color: #949ba4; }
+    .message-header .timestamp { font-size: 11px; color: #949ba4; }
     
-    .bubble-wrapper { display: flex; align-items: flex-end; gap: 8px; width: fit-content; margin-top: 2px; }
+    .bubble-wrapper { display: flex; align-items: flex-end; gap: 6px; width: fit-content; }
     .message-row.is-me .bubble-wrapper { flex-direction: row-reverse; }
     
-    .message-bubble { font-size: 14px; color: #dbdee1; line-height: 1.4; word-break: break-all; }
-    .timestamp-inline { font-size: 11px; color: #949ba4; white-space: nowrap; }
+    /* 말풍선 스타일 */
+    .message-bubble {
+      background-color: #2b2d31;
+      color: #dbdee1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-break: break-all;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .message-row.is-me .message-bubble {
+      background-color: #5865f2;
+      color: #ffffff;
+    }
+
+    .timestamp-inline { font-size: 10px; color: #949ba4; white-space: nowrap; margin-bottom: 2px; }
 
     /* 입력창 영역 */
     .chat-input-area { padding: 0 16px 24px 16px; }
@@ -158,18 +183,40 @@
     #settings-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
+      opacity: 0; transition: opacity 0.15s ease-in-out;
+    }
+    #settings-modal.active {
+      opacity: 1;
     }
     .modal-box {
-      background-color: #313338; padding: 24px; border-radius: 8px; width: 400px;
-      display: flex; flex-direction: column; gap: 16px; color: #dbdee1; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      background-color: #313338; padding: 40px; border-radius: 12px; width: 520px;
+      display: flex; flex-direction: column; gap: 24px; color: #dbdee1; box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+      position: relative;
     }
-    .modal-box h3 { margin: 0 0 8px 0; color: #f2f3f5; text-align: center; }
-    .modal-group { display: flex; flex-direction: column; gap: 6px; }
-    .modal-group label { font-size: 12px; font-weight: bold; color: #949ba4; }
-    .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-    .modal-btn-cancel { background-color: #4e5058; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-    .modal-btn-save { background-color: #5865f2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .modal-box h3 { margin: 0 0 4px 0; color: #f2f3f5; text-align: center; font-size: 20px; }
+    
+    .modal-close-btn {
+      position: absolute; top: 20px; right: 20px; background: none; border: none;
+      color: #949ba4; font-size: 22px; cursor: pointer; font-weight: bold;
+    }
+    .modal-close-btn:hover { color: #f2f3f5; }
+
+    .modal-group { display: flex; flex-direction: column; gap: 8px; }
+    .modal-group label { font-size: 13px; font-weight: bold; color: #949ba4; }
+    
+    .modal-file-label {
+      background-color: #1e1f22; border: 2px dashed #4e5058; border-radius: 8px;
+      padding: 20px; text-align: center; cursor: pointer; color: #b5bac1; font-size: 14px; font-weight: 500;
+      display: flex; flex-direction: column; align-items: center; gap: 8px; transition: border-color 0.2s, background-color 0.2s;
+    }
+    .modal-file-label:hover { border-color: #5865f2; background-color: #2b2d31; color: #f2f3f5; }
+    .modal-file-input { display: none; }
+
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+    .modal-btn-save { background-color: #5865f2; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; }
     .modal-btn-save:hover { background-color: #4752c4; }
+    .modal-btn-logout { background-color: #da373c; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; }
+    .modal-btn-logout:hover { background-color: #b82a2e; }
   </style>
 </head>
 <body>
@@ -186,10 +233,15 @@
 
   <div id="settings-modal">
     <div class="modal-box">
+      <button class="modal-close-btn" id="settings-close-btn">×</button>
       <h3>사용자 설정</h3>
       <div class="modal-group">
-        <label>프로필 사진 (아이콘 설정)</label>
-        <input type="file" id="settings-avatar-input" accept="image/*" style="font-size: 12px; color: #dbdee1;">
+        <label>프로필 사진 변경</label>
+        <label class="modal-file-label" for="settings-avatar-input">
+          <span>📁 클릭하여 이미지 파일 선택</span>
+          <span id="selected-file-name" style="font-size: 12px; color: #949ba4;">선택된 파일 없음</span>
+        </label>
+        <input type="file" id="settings-avatar-input" class="modal-file-input" accept="image/*">
       </div>
       <div class="modal-group">
         <label>닉네임</label>
@@ -200,8 +252,8 @@
         <input type="password" id="settings-password-input" class="auth-input" placeholder="변경할 비밀번호">
       </div>
       <div class="modal-buttons">
-        <button class="modal-btn-cancel" id="settings-cancel-btn">취소</button>
         <button class="modal-btn-save" id="settings-save-btn">저장</button>
+        <button class="modal-btn-logout" id="modal-logout-btn">로그아웃</button>
       </div>
     </div>
   </div>
@@ -219,7 +271,9 @@
           <span id="user-display-name">유저</span>
         </div>
         <div class="user-actions">
-          <button class="action-icon-btn" id="open-settings-btn" title="설정">⚙️</button>
+          <button class="action-icon-btn" id="open-settings-btn" title="설정">
+            <img src="setting-icon.jpg" alt="설정">
+          </button>
           <button class="logout-btn" id="logout-btn">로그아웃</button>
         </div>
       </div>
@@ -261,7 +315,7 @@
     let currentChannel = 'general';
     let lastDate = null;
 
-    // 1. 초기 6.4 : 30 너비 비율 적용
+    // 초기 너비 비율 설정 (6.4 : 30)
     window.addEventListener('DOMContentLoaded', () => {
       const sidebar = document.getElementById('sidebar');
       const totalWidth = window.innerWidth;
@@ -271,7 +325,7 @@
       }
     });
 
-    // 2. 사이드바 리사이저 드래그 기능 구현
+    // 사이드바 리사이저 드래그 기능
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.getElementById('sidebar');
     let isResizing = false;
@@ -301,7 +355,7 @@
       });
     }
 
-    // 3. 인증 상태 관리
+    // 인증 상태 관리
     onAuthStateChanged(auth, (user) => {
       const authContainer = document.getElementById('auth-container');
       const appContainer = document.getElementById('app-container');
@@ -344,7 +398,7 @@
       }
     }
 
-    // 4. 로그인 / 회원가입 화면 토글
+    // 로그인 / 회원가입 화면 토글
     let isSignupMode = false;
     const authTitle = document.getElementById('auth-title');
     const authActionBtn = document.getElementById('auth-action-btn');
@@ -384,29 +438,60 @@
       });
     }
 
-    // 5. 로그아웃 버튼
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        signOut(auth);
-      });
+    // 로그아웃 버튼
+    function handleLogout() {
+      signOut(auth);
     }
+    const logoutBtn = document.getElementById('logout-btn');
+    const modalLogoutBtn = document.getElementById('modal-logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if (modalLogoutBtn) modalLogoutBtn.addEventListener('click', () => {
+      closeSettingsModal();
+      handleLogout();
+    });
 
-    // 6. 설정 모달창 열기/닫기 및 정보 수정 기능
+    // 설정 모달 관련
     const settingsModal = document.getElementById('settings-modal');
     const openSettingsBtn = document.getElementById('open-settings-btn');
-    const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+    const settingsCloseBtn = document.getElementById('settings-close-btn');
     const settingsSaveBtn = document.getElementById('settings-save-btn');
+    const avatarFileInput = document.getElementById('settings-avatar-input');
+    const selectedFileName = document.getElementById('selected-file-name');
 
-    if (openSettingsBtn) {
-      openSettingsBtn.addEventListener('click', () => {
-        if (settingsModal) settingsModal.style.display = 'flex';
+    if (avatarFileInput) {
+      avatarFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          selectedFileName.innerText = e.target.files[0].name;
+        } else {
+          selectedFileName.innerText = '선택된 파일 없음';
+        }
       });
     }
 
-    if (settingsCancelBtn) {
-      settingsCancelBtn.addEventListener('click', () => {
-        if (settingsModal) settingsModal.style.display = 'none';
+    function openSettingsModal() {
+      if (settingsModal) {
+        settingsModal.style.display = 'flex';
+        setTimeout(() => settingsModal.classList.add('active'), 10);
+      }
+    }
+
+    function closeSettingsModal() {
+      if (settingsModal) {
+        settingsModal.classList.remove('active');
+        setTimeout(() => {
+          settingsModal.style.display = 'none';
+        }, 150);
+      }
+    }
+
+    if (openSettingsBtn) openSettingsBtn.addEventListener('click', openSettingsModal);
+    if (settingsCloseBtn) settingsCloseBtn.addEventListener('click', closeSettingsModal);
+
+    if (settingsModal) {
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+          closeSettingsModal();
+        }
       });
     }
 
@@ -415,7 +500,6 @@
         if (!auth.currentUser) return;
         const newNickname = document.getElementById('settings-nickname-input').value.trim();
         const newPassword = document.getElementById('settings-password-input').value.trim();
-        const avatarFileInput = document.getElementById('settings-avatar-input');
 
         try {
           let photoURL = auth.currentUser.photoURL;
@@ -440,15 +524,17 @@
 
           alert('설정이 성공적으로 저장되었습니다.');
           updateUserUI(auth.currentUser);
-          if (settingsModal) settingsModal.style.display = 'none';
+          closeSettingsModal();
           document.getElementById('settings-password-input').value = '';
+          avatarFileInput.value = '';
+          selectedFileName.innerText = '선택된 파일 없음';
         } catch (error) {
           alert('설정 저장 실패: ' + error.message);
         }
       });
     }
 
-    // 7. 채널 이동 및 실시간 채팅 소켓 이벤트
+    // 채널 및 소켓 통신
     document.querySelectorAll('.channel-item').forEach(item => {
       item.addEventListener('click', (e) => {
         document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
@@ -481,7 +567,6 @@
       }
     });
 
-    // 메시지 입력 전송 (오전/오후 12시간제 시각 적용)
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
       messageInput.addEventListener('keypress', (e) => {
@@ -494,7 +579,7 @@
           const minutes = now.getMinutes().toString().padStart(2, '0');
           const ampm = hours >= 12 ? '오후' : '오전';
           hours = hours % 12;
-          hours = hours ? hours : 12; // 0시는 12시로 표시
+          hours = hours ? hours : 12;
           
           const timeStr = `${ampm} ${hours}:${minutes}`;
           const dateStr = now.toLocaleDateString();
@@ -515,7 +600,7 @@
       });
     }
 
-    // 메시지 렌더링 및 그룹화 함수
+    // 메시지 렌더링 (모두 말풍선 처리, 내가 보낸 메시지는 아이디 미표시)
     function appendMessage(msg) {
       const messagesDiv = document.getElementById('messages');
       if (!messagesDiv) return;
@@ -531,43 +616,10 @@
       }
 
       const isMe = currentUser && msg.uid === currentUser.uid;
-      const lastRow = messagesDiv.lastElementChild;
-
-      if (lastRow && lastRow.classList.contains('message-row') && 
-          lastRow.dataset.uid === msg.uid && 
-          lastRow.dataset.time === msg.time && 
-          lastRow.dataset.isMe === (isMe ? 'true' : 'false')) {
-        
-        const content = lastRow.querySelector('.message-content');
-        if (content) {
-          const oldTimestamp = content.querySelector('.timestamp-inline');
-          if (oldTimestamp) oldTimestamp.remove();
-
-          const bubbleWrapper = document.createElement('div');
-          bubbleWrapper.className = 'bubble-wrapper';
-
-          const bubble = document.createElement('div');
-          bubble.className = 'message-bubble';
-          bubble.innerText = msg.text || '';
-          bubbleWrapper.appendChild(bubble);
-
-          const timestamp = document.createElement('span');
-          timestamp.className = 'timestamp timestamp-inline';
-          timestamp.innerText = msg.time || '';
-          bubbleWrapper.appendChild(timestamp);
-
-          content.appendChild(bubbleWrapper);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-          return;
-        }
-      }
-
       const row = document.createElement('div');
       row.className = `message-row ${isMe ? 'is-me' : ''}`;
-      row.dataset.uid = msg.uid;
-      row.dataset.time = msg.time;
-      row.dataset.isMe = isMe ? 'true' : 'false';
 
+      // 타인의 경우 아바타 표시
       if (!isMe) {
         const avatar = document.createElement('div');
         avatar.className = 'message-avatar';
@@ -584,15 +636,18 @@
       const content = document.createElement('div');
       content.className = 'message-content';
 
-      const header = document.createElement('div');
-      header.className = 'message-header';
-      
-      const username = document.createElement('span');
-      username.className = 'username';
-      username.innerText = msg.nickname || '익명';
-      header.appendChild(username);
+      // 타인의 경우에만 아이디(닉네임) 헤더 표시 (내가 보낸 메시지는 아이디 표시 안 함)
+      if (!isMe) {
+        const header = document.createElement('div');
+        header.className = 'message-header';
+        
+        const username = document.createElement('span');
+        username.className = 'username';
+        username.innerText = msg.nickname || '익명';
+        header.appendChild(username);
 
-      content.appendChild(header);
+        content.appendChild(header);
+      }
 
       const bubbleWrapper = document.createElement('div');
       bubbleWrapper.className = 'bubble-wrapper';
