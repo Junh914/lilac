@@ -180,8 +180,14 @@
     // 서버 DB / Firebase 인증 연동 설정 유지 (기존 프로젝트 설정값)
     // 환경에 맞춰 아래 firebaseConfig 값을 유지하거나 연동합니다.
     const firebaseConfig = {
-      // 기존 파이어베이스 설정 유지
-    };
+  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+  authDomain: "lilac-13935.firebaseapp.com",
+  projectId: "lilac-13935",
+  storageBucket: "lilac-13935.firebasestorage.app",
+  messagingSenderId: "485552650048",
+  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+  measurementId: "G-81H89P6F6E"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
