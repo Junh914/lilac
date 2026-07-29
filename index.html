@@ -56,7 +56,7 @@
       overflow: hidden;
     }
 
-    /* 사이드바 (기본 비율 6.4 : 30 중 6.4 영역) */
+    /* 사이드바 (기본 비율 6.4 : 30 반영) */
     #sidebar {
       background-color: #2b2d31;
       display: flex; flex-direction: column;
@@ -97,7 +97,7 @@
       background-color: #5865f2;
     }
 
-    /* 메인 채팅 영역 (기본 비율 6.4 : 30 중 30 영역) */
+    /* 메인 채팅 영역 */
     #chat-container {
       flex: 1;
       background-color: #313338;
@@ -146,7 +146,7 @@
     </div>
   </div>
 
-  <div id="app-container" style="display: none;">
+  <div id="app-container">
     <div id="sidebar">
       <div class="sidebar-header">채널 목록</div>
       <div class="channel-list" id="channel-list">
@@ -177,17 +177,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 서버 DB / Firebase 인증 연동 설정 유지 (기존 프로젝트 설정값)
-    // 환경에 맞춰 아래 firebaseConfig 값을 유지하거나 연동합니다.
+    // 본인의 Firebase 프로젝트 설정값 입력
     const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+      // apiKey: "...",
+      // authDomain: "...",
+      // projectId: "...",
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -196,110 +194,141 @@
     let currentUser = null;
     let currentChannel = 'general';
 
-    // 화면 초기 로드 시 6.4 : 30 너비 비율 적용 로직
+    // 1. 초기 6.4 : 30 너비 비율 적용
     window.addEventListener('DOMContentLoaded', () => {
-      const appContainer = document.getElementById('app-container');
       const sidebar = document.getElementById('sidebar');
-      
-      // 전체 너비 기준 6.4 : 30 비율 배분 (36.4 중 6.4 비율)
       const totalWidth = window.innerWidth;
       const initialSidebarWidth = totalWidth * (6.4 / 36.4);
-      sidebar.style.width = Math.max(180, Math.min(initialSidebarWidth, 400)) + 'px';
+      if (sidebar) {
+        sidebar.style.width = Math.max(150, Math.min(initialSidebarWidth, 400)) + 'px';
+      }
     });
 
-    // 사이드바 리사이저 드래그 이벤트 로직
+    // 2. 사이드바 리사이저 드래그 기능 구현
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.getElementById('sidebar');
     let isResizing = false;
 
-    resizer.addEventListener('mousedown', (e) => {
-      isResizing = true;
-      resizer.classList.add('resizing');
-      document.body.style.cursor = 'col-resize';
-      e.preventDefault();
-    });
+    if (resizer && sidebar) {
+      resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        resizer.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        e.preventDefault();
+      });
 
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      let newWidth = e.clientX;
-      if (newWidth < 150) newWidth = 150;
-      if (newWidth > 500) newWidth = 500;
-      sidebar.style.width = newWidth + 'px';
-    });
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        let newWidth = e.clientX;
+        if (newWidth < 150) newWidth = 150;
+        if (newWidth > 500) newWidth = 500;
+        sidebar.style.width = newWidth + 'px';
+      });
 
-    document.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
-        resizer.classList.remove('resizing');
-        document.body.style.cursor = 'default';
-      }
-    });
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          resizer.classList.remove('resizing');
+          document.body.style.cursor = 'default';
+        }
+      });
+    }
 
-    // 인증 상태 관리 (기존 로그인 시스템 유지)
+    // 3. 인증 상태 관리 (로그인 / 비로그인 UI 분기)
     onAuthStateChanged(auth, (user) => {
+      const authContainer = document.getElementById('auth-container');
+      const appContainer = document.getElementById('app-container');
+
       if (user) {
         currentUser = user;
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'flex';
-        document.getElementById('user-display-name').innerText = user.email.split('@')[0];
+        if (authContainer) authContainer.style.display = 'none';
+        if (appContainer) appContainer.style.display = 'flex';
         
-        // 채널 입장 요청
+        const displayNameElem = document.getElementById('user-display-name');
+        if (displayNameElem) {
+          displayNameElem.innerText = user.email ? user.email.split('@')[0] : '유저';
+        }
+        
         socket.emit('join channel', currentChannel);
       } else {
         currentUser = null;
-        document.getElementById('auth-container').style.display = 'flex';
-        document.getElementById('app-container').style.display = 'none';
+        if (authContainer) authContainer.style.display = 'flex';
+        if (appContainer) appContainer.style.display = 'none';
       }
     });
 
-    // 로그인 / 회원가입 UI 토글 및 처리
+    // 4. 로그인 / 회원가입 화면 토글
     let isSignupMode = false;
     const authTitle = document.getElementById('auth-title');
     const authActionBtn = document.getElementById('auth-action-btn');
     const authSwitchText = document.getElementById('auth-switch-text');
 
-    authSwitchText.addEventListener('click', () => {
-      isSignupMode = !isSignupMode;
-      authTitle.innerText = isSignupMode ? '회원가입' : '로그인';
-      authActionBtn.innerText = isSignupMode ? '가입하기' : '로그인';
-      authSwitchText.innerHTML = isSignupMode ? '이미 계정이 있으신가요? <span>로그인하기</span>' : '계정이 없으신가요? <span>회원가입하기</span>';
-    });
+    if (authSwitchText) {
+      authSwitchText.addEventListener('click', () => {
+        isSignupMode = !isSignupMode;
+        if (authTitle) authTitle.innerText = isSignupMode ? '회원가입' : '로그인';
+        if (authActionBtn) authActionBtn.innerText = isSignupMode ? '가입하기' : '로그인';
+        authSwitchText.innerHTML = isSignupMode ? '이미 계정이 있으신가요? <span>로그인하기</span>' : '계정이 없으신가요? <span>회원가입하기</span>';
+      });
+    }
 
-    authActionBtn.addEventListener('click', async () => {
-      const email = document.getElementById('auth-email').value;
-      const password = document.getElementById('auth-password').value;
-      try {
-        if (isSignupMode) {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } else {
-          await signInWithEmailAndPassword(auth, email, password);
+    // 5. 로그인 및 회원가입 버튼 클릭 이벤트 처리
+    if (authActionBtn) {
+      authActionBtn.addEventListener('click', async () => {
+        const emailInput = document.getElementById('auth-email');
+        const passwordInput = document.getElementById('auth-password');
+        
+        const email = emailInput ? emailInput.value.trim() : '';
+        const password = passwordInput ? passwordInput.value.trim() : '';
+
+        if (!email || !password) {
+          alert('이메일과 비밀번호를 모두 입력해주세요.');
+          return;
         }
-      } catch (error) {
-        alert('인증 실패: ' + error.message);
-      }
-    });
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      signOut(auth);
-    });
+        try {
+          if (isSignupMode) {
+            await createUserWithEmailAndPassword(auth, email, password);
+          } else {
+            await signInWithEmailAndPassword(auth, email, password);
+          }
+        } catch (error) {
+          alert('인증 실패: ' + error.message);
+        }
+      });
+    }
 
-    // 채널 변경 이벤트
+    // 6. 로그아웃 버튼
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth);
+      });
+    }
+
+    // 7. 채널 이동 및 실시간 채팅 소켓 이벤트
     document.querySelectorAll('.channel-item').forEach(item => {
       item.addEventListener('click', (e) => {
         document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
         e.target.classList.add('active');
         currentChannel = e.target.getAttribute('data-channel');
-        document.getElementById('current-channel-title').innerText = `# ${currentChannel}`;
-        document.getElementById('messages').innerHTML = '';
+        
+        const channelTitle = document.getElementById('current-channel-title');
+        if (channelTitle) channelTitle.innerText = `# ${currentChannel}`;
+        
+        const messagesDiv = document.getElementById('messages');
+        if (messagesDiv) messagesDiv.innerHTML = '';
+        
         socket.emit('join channel', currentChannel);
       });
     });
 
-    // 소켓 채팅 내역 수신
     socket.on('chat history', (data) => {
       const messagesDiv = document.getElementById('messages');
-      messagesDiv.innerHTML = '';
-      data.history.forEach(msg => appendMessage(msg));
+      if (messagesDiv && data.history) {
+        messagesDiv.innerHTML = '';
+        data.history.forEach(msg => appendMessage(msg));
+      }
     });
 
     socket.on('chat message', (msg) => {
@@ -308,28 +337,33 @@
       }
     });
 
-    // 메시지 전송
+    // 메시지 입력 전송
     const messageInput = document.getElementById('message-input');
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && messageInput.value.trim() !== '') {
-        const text = messageInput.value;
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        
-        socket.emit('chat message', {
-          channel: currentChannel,
-          uid: currentUser.uid,
-          nickname: currentUser.email.split('@')[0],
-          text: text,
-          date: now.toLocaleDateString(),
-          time: timeStr
-        });
-        messageInput.value = '';
-      }
-    });
+    if (messageInput) {
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && messageInput.value.trim() !== '') {
+          if (!currentUser) return;
+          const text = messageInput.value;
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          
+          socket.emit('chat message', {
+            channel: currentChannel,
+            uid: currentUser.uid,
+            nickname: currentUser.email ? currentUser.email.split('@')[0] : '유저',
+            text: text,
+            date: now.toLocaleDateString(),
+            time: timeStr
+          });
+          messageInput.value = '';
+        }
+      });
+    }
 
     function appendMessage(msg) {
       const messagesDiv = document.getElementById('messages');
+      if (!messagesDiv) return;
+
       const row = document.createElement('div');
       row.className = 'message-row';
 
@@ -346,7 +380,7 @@
       
       const username = document.createElement('span');
       username.className = 'username';
-      username.innerText = msg.nickname;
+      username.innerText = msg.nickname || '익명';
       header.appendChild(username);
 
       const timestamp = document.createElement('span');
@@ -358,9 +392,13 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
-      bubble.innerText = msg.text;
+      bubble.innerText = msg.text || '';
       content.appendChild(bubble);
 
       row.appendChild(content);
       messagesDiv.appendChild(row);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  </script>
+</body>
+</html>
