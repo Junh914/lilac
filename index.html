@@ -606,13 +606,13 @@
       
       const timeStr = `${ampmText} ${hours}:${minutes}`;
       
-      // 년도 월 일 요일 형식 생성 (. 대신 공백 사용)
+      // 날짜 변경선 형식 (YYYY년 MM월 DD일 요일)
       const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
       const weekday = days[now.getDay()];
-      const dateStr = `${year} ${month} ${day} ${weekday}`;
+      const dateStr = `${year}년 ${month}월 ${day}일 ${weekday}`;
       
       const timestamp = Date.now();
       
