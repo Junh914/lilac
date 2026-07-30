@@ -216,7 +216,6 @@
 </head>
 <body>
 
-  <!-- 로그인 화면 -->
   <div id="auth-container">
     <div class="auth-box">
       <h2 id="auth-title">로그인</h2>
@@ -227,7 +226,6 @@
     </div>
   </div>
 
-  <!-- 설정 모달창 -->
   <div id="settings-modal">
     <div class="modal-box">
       <button class="modal-close-btn" id="settings-close-btn">×</button>
@@ -255,9 +253,7 @@
     </div>
   </div>
 
-  <!-- 메인 앱 컨테이너 -->
   <div id="app-container">
-    <!-- 좌측 사이드바 -->
     <div id="sidebar">
       <div class="sidebar-header">채널 목록</div>
       <div class="channel-list" id="channel-list">
@@ -277,10 +273,8 @@
       </div>
     </div>
 
-    <!-- 리사이저 바 -->
     <div id="sidebar-resizer"></div>
 
-    <!-- 우측 채팅 영역 -->
     <div id="chat-container">
       <div class="chat-header" id="current-channel-title"># general</div>
       <div class="chat-messages" id="messages"></div>
@@ -295,12 +289,11 @@
     </div>
   </div>
 
-  <!-- 스크립트 연동 -->
   <script src="/socket.io/socket.io.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
@@ -363,17 +356,32 @@
       });
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       const authContainer = document.getElementById('auth-container');
       const appContainer = document.getElementById('app-container');
 
       if (user) {
         currentUser = user;
+        
+        // Firestore에서 유저 커스텀 프로필(닉네임, 사진) 불러오기
+        try {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            currentUser.customData = userDocSnap.data();
+          } else {
+            currentUser.customData = { displayName: user.displayName, photoURL: user.photoURL };
+          }
+        } catch (e) {
+          console.error("유저 프로필 로드 실패:", e);
+          currentUser.customData = {};
+        }
+
         console.log("로그인 성공 유저:", user.email);
         if (authContainer) authContainer.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         
-        updateUserUI(user);
+        updateUserUI(currentUser);
         loadChannelHistory(currentChannel);
       } else {
         currentUser = null;
@@ -388,15 +396,18 @@
       const avatarPreview = document.getElementById('user-avatar-preview');
       const nicknameInput = document.getElementById('settings-nickname-input');
       
-      const name = user.displayName || (user.email ? user.email.split('@')[0] : '유저');
+      const customData = user.customData || {};
+      const name = customData.displayName || user.displayName || (user.email ? user.email.split('@')[0] : '유저');
+      const photo = customData.photoURL || user.photoURL;
+
       if (displayNameElem) displayNameElem.innerText = name;
       if (nicknameInput) nicknameInput.value = name;
 
       if (avatarPreview) {
         avatarPreview.innerHTML = '';
-        if (user.photoURL) {
+        if (photo) {
           const img = document.createElement('img');
-          img.src = user.photoURL;
+          img.src = photo;
           avatarPreview.appendChild(img);
         } else {
           avatarPreview.innerText = name[0].toUpperCase();
@@ -498,7 +509,7 @@
         const newPassword = document.getElementById('settings-password-input').value.trim();
 
         try {
-          let photoURL = auth.currentUser.photoURL;
+          let photoURL = currentUser.customData?.photoURL || auth.currentUser.photoURL || null;
 
           if (avatarFileInput && avatarFileInput.files && avatarFileInput.files[0]) {
             const file = avatarFileInput.files[0];
@@ -509,17 +520,28 @@
             });
           }
 
+          // 1. Firebase Auth 프로필에는 닉네임만 업데이트 (photoURL 길이 제한 우회)
           await updateProfile(auth.currentUser, {
+            displayName: newNickname || auth.currentUser.displayName
+          });
+
+          // 2. Firestore에 커스텀 프로필(닉네임 및 Base64 이미지) 저장 (용량 제한 없음)
+          await setDoc(doc(db, "users", auth.currentUser.uid), {
             displayName: newNickname || auth.currentUser.displayName,
             photoURL: photoURL
-          });
+          }, { merge: true });
+
+          currentUser.customData = {
+            displayName: newNickname || auth.currentUser.displayName,
+            photoURL: photoURL
+          };
 
           if (newPassword) {
             await updatePassword(auth.currentUser, newPassword);
           }
 
           alert('설정이 성공적으로 저장되었습니다.');
-          updateUserUI(auth.currentUser);
+          updateUserUI(currentUser);
           closeSettingsModal();
           document.getElementById('settings-password-input').value = '';
           avatarFileInput.value = '';
@@ -569,13 +591,11 @@
 
         querySnapshot.forEach((doc) => {
           const msg = doc.data();
-          // 중복 방지 체크 후 캐시에 추가
           if (!messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text)) {
             messageHistoryCache.push(msg);
           }
         });
 
-        // 항상 timestamp 기준으로 완벽한 오름차순(시간순) 정렬 보장
         messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
         redrawMessages();
 
@@ -625,8 +645,8 @@
       
       const timestamp = Date.now();
       
-      let nickname = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
-      let photoURL = currentUser.photoURL || null;
+      let nickname = currentUser.customData?.displayName || currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
+      let photoURL = currentUser.customData?.photoURL || currentUser.photoURL || null;
 
       // 랜덤 채널인 경우 닉네임과 아바타를 번호 자체로 지정
       if (currentChannel === 'random') {
@@ -675,12 +695,10 @@
     }
 
     function renderAndCacheMessage(msg) {
-      // 중복 메시지 수신 방지
       const exists = messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text);
       if (!exists) {
         messageHistoryCache.push(msg);
       }
-      // 수신 및 추가될 때마다 시간순(timestamp 오름차순) 정렬 보장
       messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
       redrawMessages();
     }
