@@ -315,7 +315,6 @@
     let lastDate = null;
     let messageHistoryCache = [];
 
-    // 랜덤 채널용 세션 기준 자연수 번호(99 이하) 생성 (1 ~ 99)
     const randomChannelNum = String(Math.floor(Math.random() * 99) + 1);
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -376,7 +375,6 @@
           currentUser.customData = {};
         }
 
-        console.log("로그인 성공 유저:", user.email);
         if (authContainer) authContainer.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         
@@ -384,7 +382,6 @@
         loadChannelHistory(currentChannel);
       } else {
         currentUser = null;
-        console.log("로그아웃 상태");
         if (authContainer) authContainer.style.display = 'flex';
         if (appContainer) appContainer.style.display = 'none';
       }
@@ -571,10 +568,9 @@
       });
     });
 
-    // Firestore 대화 불러오기 및 엄격한 시간순(timestamp 오름차순) 정렬
+    // 💡 Firestore 대화 불러오기 및 타임스탬프 + 고유 ID(Tie-breaker) 기준 완벽한 시간순 오름차순 정렬
     async function loadChannelHistory(channel) {
       try {
-        console.log(`[채팅 로드] ${channel} 채널 데이터 불러오는 중...`);
         const q = query(
           collection(db, "messages"),
           where("channel", "==", channel),
@@ -586,27 +582,30 @@
         lastDate = null;
         messageHistoryCache = [];
 
-        querySnapshot.forEach((doc) => {
-          const msg = doc.data();
-          if (!messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text)) {
+        querySnapshot.forEach((docSnap) => {
+          const msg = docSnap.data();
+          msg.id = docSnap.id; // Firestore 문서 고유 ID 저장
+          if (!messageHistoryCache.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text))) {
             messageHistoryCache.push(msg);
           }
         });
 
-        // 💡 엄격한 timestamp 기준 시간순(오름차순) 정렬 보장 (보낸 사람과 무관하게 오직 시간순)
-        messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
-        redrawMessages();
+        // 💡 안정적인 정렬(Stable Sort): timestamp가 같거나 근접할 경우 고유 ID 비교로 순서 역전 방지
+        messageHistoryCache.sort((a, b) => {
+          if (a.timestamp !== b.timestamp) {
+            return (a.timestamp || 0) - (b.timestamp || 0);
+          }
+          return (a.id || '').localeCompare(b.id || '');
+        });
 
-        console.log(`[채팅 로드 완료] 총 ${messageHistoryCache.length}개의 메시지를 불러왔습니다.`);
+        redrawMessages();
       } catch (error) {
-        console.error("❌ 채팅 내역 불러오기 오류:", error);
-        alert("채팅 내역을 불러오지 못했습니다. F12 콘솔창의 에러 메시지를 확인해주세요.");
+        console.error("채팅 내역 불러오기 오류:", error);
       }
     }
 
     // 실시간 메시지 수신
     socket.on('chat message', (msg) => {
-      console.log("[실시간 메시지 수신]", msg);
       if (msg.channel === currentChannel) {
         renderAndCacheMessage(msg);
       }
@@ -662,12 +661,11 @@
       };
 
       try {
-        await addDoc(collection(db, "messages"), msgData);
-        console.log("[메시지 전송 성공 및 DB 저장 완료]");
+        const docRef = await addDoc(collection(db, "messages"), msgData);
+        msgData.id = docRef.id; // 생성된 Firestore 문서 ID 부여
         socket.emit('chat message', msgData);
       } catch (error) {
-        console.error("❌ 메시지 저장 오류:", error);
-        alert("메시지 저장 중 오류가 발생했습니다.");
+        console.error("메시지 저장 오류:", error);
       }
 
       messageInput.value = '';
@@ -691,12 +689,22 @@
     }
 
     function renderAndCacheMessage(msg) {
-      const exists = messageHistoryCache.some(m => m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text);
+      if (!msg.id) {
+        msg.id = 'socket_' + Date.now() + '_' + Math.random();
+      }
+      const exists = messageHistoryCache.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.uid === msg.uid && m.text === msg.text));
       if (!exists) {
         messageHistoryCache.push(msg);
       }
-      // 실시간 수신 시에도 timestamp 기준으로 항상 엄격한 시간순 정렬
-      messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // 💡 실시간 수신 시에도 타임스탬프 + 고유 ID(Tie-breaker) 기준 안정 정렬 적용
+      messageHistoryCache.sort((a, b) => {
+        if (a.timestamp !== b.timestamp) {
+          return (a.timestamp || 0) - (b.timestamp || 0);
+        }
+        return (a.id || '').localeCompare(b.id || '');
+      });
+
       redrawMessages();
     }
 
