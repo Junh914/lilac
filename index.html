@@ -315,7 +315,7 @@
     let lastDate = null;
     let messageHistoryCache = [];
 
-    // 랜덤 채널용 세션 기준 자연수 번호(99 이하) 생성 (1 ~ 99) -> 닉네임을 번호 자체로 지정
+    // 랜덤 채널용 세션 기준 자연수 번호(99 이하) 생성 (1 ~ 99)
     const randomChannelNum = String(Math.floor(Math.random() * 99) + 1);
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -363,7 +363,6 @@
       if (user) {
         currentUser = user;
         
-        // Firestore에서 유저 커스텀 프로필(닉네임, 사진) 불러오기
         try {
           const userDocRef = doc(db, "users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
@@ -520,12 +519,10 @@
             });
           }
 
-          // 1. Firebase Auth 프로필에는 닉네임만 업데이트 (photoURL 길이 제한 우회)
           await updateProfile(auth.currentUser, {
             displayName: newNickname || auth.currentUser.displayName
           });
 
-          // 2. Firestore에 커스텀 프로필(닉네임 및 Base64 이미지) 저장 (용량 제한 없음)
           await setDoc(doc(db, "users", auth.currentUser.uid), {
             displayName: newNickname || auth.currentUser.displayName,
             photoURL: photoURL
@@ -574,7 +571,7 @@
       });
     });
 
-    // Firebase Firestore 전체 대화 불러오기 (messages 컬렉션 사용)
+    // Firestore 대화 불러오기 및 엄격한 시간순(timestamp 오름차순) 정렬
     async function loadChannelHistory(channel) {
       try {
         console.log(`[채팅 로드] ${channel} 채널 데이터 불러오는 중...`);
@@ -596,6 +593,7 @@
           }
         });
 
+        // 💡 엄격한 timestamp 기준 시간순(오름차순) 정렬 보장 (보낸 사람과 무관하게 오직 시간순)
         messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
         redrawMessages();
 
@@ -614,7 +612,7 @@
       }
     });
 
-    // 메시지 전송 공통 함수
+    // 메시지 전송
     async function handleSendMessage() {
       const messageInput = document.getElementById('message-input');
       if (!messageInput || messageInput.value.trim() === '') return;
@@ -635,7 +633,6 @@
       
       const timeStr = `${ampmText} ${hours}:${minutes}`;
       
-      // 날짜 변경선 형식 (YYYY년 MM월 DD일 요일)
       const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -648,7 +645,6 @@
       let nickname = currentUser.customData?.displayName || currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '유저');
       let photoURL = currentUser.customData?.photoURL || currentUser.photoURL || null;
 
-      // 랜덤 채널인 경우 닉네임과 아바타를 번호 자체로 지정
       if (currentChannel === 'random') {
         nickname = randomChannelNum;
         photoURL = null;
@@ -699,6 +695,7 @@
       if (!exists) {
         messageHistoryCache.push(msg);
       }
+      // 실시간 수신 시에도 timestamp 기준으로 항상 엄격한 시간순 정렬
       messageHistoryCache.sort((a, b) => a.timestamp - b.timestamp);
       redrawMessages();
     }
