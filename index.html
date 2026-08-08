@@ -180,7 +180,7 @@
     }
     .context-menu-item:hover { background-color: #da373c; color: #ffffff; }
 
-    /* 💡 신규 추가: 답장 관련 스타일 */
+    /* 답장 관련 스타일 */
     .message-hover-actions {
       position: absolute; top: -14px; display: none; background-color: #2b2d31; border: 1px solid #1e1f22;
       border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
@@ -212,7 +212,6 @@
     .reply-preview-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
     .cancel-reply-btn { background: none; border: none; color: #949ba4; cursor: pointer; border-radius: 50%; padding: 2px 6px; }
     .cancel-reply-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.1); }
-    /* -------------------------------- */
 
     /* 입력창 영역 */
     .chat-input-area { padding: 0 16px 24px 16px; }
@@ -403,7 +402,6 @@
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
 
-    // 답장 UI 요소
     const replyPreviewBar = document.getElementById('reply-preview-bar');
     const replyTargetName = document.getElementById('reply-target-name');
     const replyTargetText = document.getElementById('reply-target-text');
@@ -717,7 +715,7 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // --- 메시지 렌더링 (답장 호버 + 인용 표시 추가) ---
+    // --- 메시지 렌더링 ---
     function redrawMessages() {
       messagesDiv.innerHTML = '';
       lastDateStr = null;
@@ -738,7 +736,8 @@
           lastSenderId = null;
         }
 
-        const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time);
+        // 💡 답장 메시지일 경우 무조건 연속 메시지 처리를 해제하여 아바타/닉네임 강제 표시
+        const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
         
         const row = document.createElement('div');
         row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
@@ -770,19 +769,20 @@
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        if (!isMine && !isConsecutive) {
-          const header = document.createElement('div');
-          header.className = 'message-header';
-          header.innerText = msg.nickname;
-          content.appendChild(header);
-        }
-
-        // 💡 3. 답장 인용문 렌더링
+        // 💡 3-1. 답장 인용문을 가장 먼저 렌더링 (닉네임보다 상단 배치)
         if (msg.replyTo && !msg.isDeleted) {
           const replyQuote = document.createElement('div');
           replyQuote.className = 'reply-quote';
           replyQuote.innerHTML = `<span class="reply-quote-author">@${escapeHtml(msg.replyTo.author)}</span> <span class="reply-quote-text">${escapeHtml(msg.replyTo.content)}</span>`;
           content.appendChild(replyQuote);
+        }
+
+        // 💡 3-2. 닉네임 (Header) 추가
+        if (!isMine && !isConsecutive) {
+          const header = document.createElement('div');
+          header.className = 'message-header';
+          header.innerText = msg.nickname;
+          content.appendChild(header);
         }
 
         // 4. 버블
@@ -815,7 +815,7 @@
 
         row.appendChild(timeContainer);
 
-        // 💡 5. 호버 답장 버튼 추가
+        // 5. 호버 답장 버튼 추가
         if (!msg.isDeleted) {
           const hoverActions = document.createElement('div');
           hoverActions.className = 'message-hover-actions';
