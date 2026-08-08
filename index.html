@@ -182,7 +182,7 @@
 
     /* 답장 관련 스타일 */
     .message-hover-actions {
-      position: absolute; top: -14px; display: none; background-color: #2b2d31; border: 1px solid #1e1f22;
+      position: absolute; top: -8px; display: none; background-color: #2b2d31; border: 1px solid #1e1f22;
       border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
     }
     .message-row.other .message-hover-actions { right: -30px; }
@@ -363,7 +363,7 @@
     import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ 본인의 실제 Firebase Config 키값으로 꼭 수정하세요!
-    const firebaseConfig = {
+   const firebaseConfig = {
   apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
   authDomain: "lilac-13935.firebaseapp.com",
   projectId: "lilac-13935",
@@ -736,7 +736,6 @@
           lastSenderId = null;
         }
 
-        // 💡 답장 메시지일 경우 무조건 연속 메시지 처리를 해제하여 아바타/닉네임 강제 표시
         const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
         
         const row = document.createElement('div');
@@ -769,7 +768,7 @@
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        // 💡 3-1. 답장 인용문을 가장 먼저 렌더링 (닉네임보다 상단 배치)
+        // 3-1. 답장 인용문 (닉네임보다 상단 배치)
         if (msg.replyTo && !msg.isDeleted) {
           const replyQuote = document.createElement('div');
           replyQuote.className = 'reply-quote';
@@ -777,7 +776,7 @@
           content.appendChild(replyQuote);
         }
 
-        // 💡 3-2. 닉네임 (Header) 추가
+        // 3-2. 닉네임 (Header) 추가
         if (!isMine && !isConsecutive) {
           const header = document.createElement('div');
           header.className = 'message-header';
