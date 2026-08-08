@@ -16,7 +16,7 @@
       overflow: hidden;
     }
 
-    /* 밝고 더 굵어진 커스텀 스크롤바 설정 */
+    /* 커스텀 스크롤바 */
     ::-webkit-scrollbar { width: 9.5px; height: 9.5px; }
     ::-webkit-scrollbar-track { background: #2b2d31; border-radius: 5px; }
     ::-webkit-scrollbar-thumb { background: #80848e; border-radius: 5px; }
@@ -47,23 +47,20 @@
       flex-direction: row; overflow: hidden;
     }
 
-    /* 좌측 채널바 */
     .servers-sidebar { width: 72px; background: #1e1f22; display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
     .channels-sidebar { width: 240px; background: #2b2d31; display: flex; flex-direction: column; border-right: 1px solid #202225; }
     
-    /* 중앙 채팅 영역 */
     .chat-main { flex: 1; display: flex; flex-direction: column; background: #313338; position: relative; }
     .chat-header { height: 48px; border-bottom: 1px solid #202225; display: flex; align-items: center; padding: 0 16px; font-weight: bold; color: #f2f3f5; }
     
     .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
     
-    /* 메시지 행 스타일 */
     .message-row { display: flex; gap: 16px; position: relative; padding: 4px 16px; width: 100%; }
     .message-row:hover { background-color: rgba(255,255,255,0.02); }
     
     .avatar { width: 40px; height: 40px; border-radius: 50%; background: #5865f2; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; }
     
-    /* 🔑 수정된 핵심 스타일 1: 메시지 컨텐츠 영역 (좌측 정렬 및 유연화) */
+    /* 🔑 수정된 핵심 스타일 1: 메시지 컨텐츠 영역 (좌측 정렬) */
     .message-content {
       display: flex;
       flex-direction: column;
@@ -75,7 +72,7 @@
     .username { font-weight: 600; color: #f2f3f5; font-size: 15px; }
     .timestamp { font-size: 12px; color: #949ba4; }
 
-    /* 🔑 수정된 핵심 스타일 2: 말풍선 박스 (텍스트 길이에 맞게 고정) */
+    /* 🔑 수정된 핵심 스타일 2: 말풍선 박스 (너비 고정) */
     .message-bubble {
       width: fit-content;
       max-width: 100%;
@@ -95,13 +92,26 @@
     .action-btn { background: none; border: none; color: #b5bac1; cursor: pointer; padding: 4px 8px; border-radius: 3px; font-size: 13px; }
     .action-btn:hover { background: #35373c; color: #f2f3f5; }
 
-    /* 하단 입력창 */
-    .chat-input-area { padding: 0 16px 24px 16px; }
+    /* 하단 입력창 영역 */
+    .chat-input-area { padding: 0 16px 24px 16px; display: flex; flex-direction: column; gap: 8px; }
+    
+    /* 답장 미리보기 바 */
+    #reply-preview-container {
+      display: none; background: #2b2d31; padding: 8px 12px; border-radius: 4px 4px 0 0;
+      justify-content: space-between; align-items: center; font-size: 13px; color: #b5bac1;
+      border-left: 4px solid #5865f2;
+    }
+    #reply-preview-container.active { display: flex; }
+    .cancel-reply-btn { background: none; border: none; color: #b5bac1; cursor: pointer; }
+    .cancel-reply-btn:hover { color: #f2f3f5; }
+
     .chat-input-wrapper { background: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; flex-direction: column; }
     .chat-input { background: transparent; border: none; color: #dbdee1; font-size: 15px; outline: none; width: 100%; resize: none; max-height: 150px; }
 
     /* 우측 유저 목록 */
     .users-sidebar { width: 240px; background: #2b2d31; border-left: 1px solid #202225; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .user-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #dbdee1; padding: 4px 0; }
+    .user-status-dot { width: 8px; height: 8px; background: #23a55a; border-radius: 50%; }
   </style>
 </head>
 <body>
@@ -121,6 +131,11 @@
       <div class="chat-messages" id="chat-messages"></div>
       
       <div class="chat-input-area">
+        <div id="reply-preview-container">
+          <span id="reply-preview-text">답장할 메시지 내용</span>
+          <button class="cancel-reply-btn" id="cancel-reply-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
         <div class="chat-input-wrapper">
           <textarea id="message-input" class="chat-input" placeholder="메시지를 입력하세요..."></textarea>
         </div>
@@ -129,7 +144,8 @@
 
     <div class="users-sidebar">
       <h3>참여 멤버</h3>
-      <div id="users-list"></div>
+      <div id="users-list">
+        </div>
     </div>
   </div>
 
@@ -137,6 +153,7 @@
   <script>
     const socket = io();
     let currentUser = '';
+    let currentReplyTarget = null; // 현재 답장 중인 메시지 정보
 
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
@@ -144,15 +161,39 @@
     const loginBtn = document.getElementById('login-btn');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
+    
+    const replyPreviewContainer = document.getElementById('reply-preview-container');
+    const replyPreviewText = document.getElementById('reply-preview-text');
+    const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+    const usersList = document.getElementById('users-list');
 
+    // 로그인 처리
     loginBtn.addEventListener('click', () => {
       const name = usernameInput.value.trim();
       if (!name) return alert('닉네임을 입력해주세요!');
       currentUser = name;
       authContainer.style.display = 'none';
       appContainer.style.display = 'flex';
+
+      // 접속 유저 알림 또는 목록 추가 로직
+      socket.emit('join user', currentUser);
     });
 
+    // 답장 설정 함수
+    function setReplyTarget(msg) {
+      currentReplyTarget = msg;
+      replyPreviewText.innerText = `${msg.user}: ${msg.text}`;
+      replyPreviewContainer.classList.add('active');
+      messageInput.focus();
+    }
+
+    // 답장 취소 버튼
+    cancelReplyBtn.addEventListener('click', () => {
+      currentReplyTarget = null;
+      replyPreviewContainer.classList.remove('active');
+    });
+
+    // 메시지 전송 이벤트
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -162,16 +203,23 @@
         socket.emit('chat message', {
           user: currentUser,
           text: text,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          replyTo: currentReplyTarget ? { user: currentReplyTarget.user, text: currentReplyTarget.text } : null
         });
 
+        // 입력창 및 답장 상태 초기화
         messageInput.value = '';
+        currentReplyTarget = null;
+        replyPreviewContainer.classList.remove('active');
       }
     });
 
+    // 서버로부터 메시지 수신
     socket.on('chat message', (msg) => {
       const row = document.createElement('div');
       row.className = 'message-row';
+
+      const isMine = (msg.user === currentUser);
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
@@ -181,6 +229,16 @@
       const content = document.createElement('div');
       content.className = 'message-content';
 
+      // 답장 정보가 있는 경우 상단에 표시
+      if (msg.replyTo) {
+        const replyInfo = document.createElement('div');
+        replyInfo.style.fontSize = '12px';
+        replyInfo.style.color = '#b5bac1';
+        replyInfo.style.marginBottom = '2px';
+        replyInfo.innerHTML = `<i class="fa-solid fa-reply fa-flip-horizontal"></i> <b>${msg.replyTo.user}</b>에게 답장: ${msg.replyTo.text}`;
+        content.appendChild(replyInfo);
+      }
+
       const headerInfo = document.createElement('div');
       headerInfo.className = 'message-header-info';
       headerInfo.innerHTML = `<span class="username">${msg.user}</span><span class="timestamp">${msg.time}</span>`;
@@ -188,12 +246,42 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
-      bubble.innerText = msg.text;
+      
+      if (msg.isDeleted) {
+        bubble.classList.add('deleted');
+        bubble.innerHTML = `<span style="font-size:13px; opacity:0.7;">🚫</span> 삭제된 메시지입니다.`;
+      } else {
+        bubble.innerText = msg.text || '';
+      }
       content.appendChild(bubble);
-
       row.appendChild(content);
+
+      // 타인이 보낸 경우 타임스탬프를 옆에 둘 수도 있는 구조 등 반영 가능
+      if (!isMine && !msg.isDeleted) {
+        const hoverActions = document.createElement('div');
+        hoverActions.className = 'message-hover-actions';
+        hoverActions.innerHTML = `<button class="action-btn hover-reply-btn" title="답장"><i class="fa-solid fa-reply"></i> 답장</button>`;
+        
+        hoverActions.querySelector('.hover-reply-btn').addEventListener('click', () => {
+          setReplyTarget(msg);
+        });
+        
+        row.appendChild(hoverActions);
+      }
+
       chatMessages.appendChild(row);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // 유저 목록 갱신 이벤트 수신
+    socket.on('update users', (users) => {
+      usersList.innerHTML = '';
+      users.forEach(username => {
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-item';
+        userDiv.innerHTML = `<div class="user-status-dot"></div><span>${username}</span>`;
+        usersList.appendChild(userDiv);
+      });
     });
   </script>
 </body>
