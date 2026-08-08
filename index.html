@@ -161,14 +161,7 @@
     
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
-  width: fit-content;      /* 🔑 핵심: 짧은 텍스트일 때 말풍선이 꽉 차던 현상 방지 (텍스트 크기만큼만 조절) */
-  max-width: 100%;         /* 부모(.message-content) 너비를 초과하지 않음 */
-  word-break: break-word;  /* 긴 영단어나 공백 없는 텍스트 자동 줄바꿈 */
-  /* (기존에 작성해 두셨던 padding, background, border-radius 등은 그대로 두시면 됩니다!) */
-      padding: 10px 14px;
-      font-size: 14px; 
-      line-height: 1.4; 
-      border-radius: 12px;
+      padding: 10px 14px; word-break: break-all; font-size: 14px; line-height: 1.4; border-radius: 12px;
     }
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
