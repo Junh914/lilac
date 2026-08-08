@@ -1,11 +1,11 @@
 const express = require('express');
-const http = http = require('http');
+const http = require('http'); // ⭕ 수정 완료
 const { Server } = require('socket.io');
 const admin = require('firebase-admin');
 
-// ⚠️ 참고: 파이어베이스 Admin SDK를 사용하려면 아래 주석을 풀고 serviceAccountKey.json 파일을 서버 폴더에 넣어야 합니다.
-// const serviceAccount = require('./serviceAccountKey.json');
-// admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+//참고: 파이어베이스 Admin SDK를 사용하려면 아래 주석을 풀고 serviceAccountKey.json 파일을 서버 폴더에 넣어야 합니다.
+const serviceAccount = require('./serviceAccountKey.json');
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const app = express();
 const server = http.createServer(app);
@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
 
-      <h2>💬 실시간 채팅 & 알림 서비스</h2>
+      <h2>Lilac</h2>
       <div class="guide">
         💡 <b>Windows</b>는 브라우저 알림 권한 허용, <b>iOS 크롬</b>은 [홈 화면에 추가] 후 실행해야 시스템 알림이 정상 작동합니다.
       </div>
@@ -61,13 +61,14 @@ app.get('/', (req, res) => {
 
         // 2. 파이어베이스 웹 설정 (본인의 파이어베이스 콘솔 값 입력)
         const firebaseConfig = {
-          apiKey: "YOUR_API_KEY",
-          authDomain: "YOUR_AUTH_DOMAIN",
-          projectId: "YOUR_PROJECT_ID",
-          storageBucket: "YOUR_STORAGE_BUCKET",
-          messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-          appId: "YOUR_APP_ID"
-        };
+  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+  authDomain: "lilac-13935.firebaseapp.com",
+  projectId: "lilac-13935",
+  storageBucket: "lilac-13935.firebasestorage.app",
+  messagingSenderId: "485552650048",
+  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+  measurementId: "G-81H89P6F6E"
+};
 
         if (firebase.apps.length === 0) {
           firebase.initializeApp(firebaseConfig);
@@ -152,7 +153,7 @@ io.on('connection', (socket) => {
         const payload = {
           token: token,
           notification: {
-            title: `${data.sender}님의 메시지`,
+            title: `${data.sender}`,
             body: data.message
           }
         };
