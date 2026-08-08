@@ -136,9 +136,9 @@
       margin: 0 10px; color: #dbdee1; white-space: nowrap;
     }
 
-    /* 메시지 행 스타일 */
-    .message-row { display: flex; align-items: flex-end; gap: 8px; max-width: 75%; position: relative; }
-    .message-row.mine { align-self: flex-end; flex-direction: row-reverse; }
+    /* 카카오톡 스타일 메시지 행 구조 */
+    .message-row { display: flex; align-items: flex-end; gap: 6px; max-width: 75%; position: relative; }
+    .message-row.mine { align-self: flex-end; }
     .message-row.other { align-self: flex-start; }
     .message-row.consecutive { margin-top: -6px; }
     .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
@@ -152,10 +152,8 @@
     }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     
-    .message-content { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
-    .message-row.mine .message-content { align-items: flex-end; }
-    .message-row.other .message-content { align-items: flex-start; }
-
+    .message-content { display: flex; flex-direction: column; gap: 2px; max-width: 100%; min-width: 0; }
+    
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
       padding: 10px 14px; word-break: break-all; font-size: 14px; line-height: 1.4; border-radius: 12px;
@@ -163,8 +161,8 @@
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
 
-    .time-container { display: flex; align-items: flex-end; }
-    .timestamp { font-size: 10px; color: #949ba4; margin: 0 4px 2px 4px; white-space: nowrap; }
+    /* 카카오톡 스타일 타임스탬프 (말풍선 옆에 밀착) */
+    .timestamp { font-size: 10px; color: #949ba4; margin-bottom: 2px; white-space: nowrap; flex-shrink: 0; }
 
     /* 우클릭 삭제 & 삭제된 메시지 디자인 */
     .message-bubble.deleted {
@@ -204,7 +202,7 @@
     #reply-preview-bar {
       display: none; background-color: #2b2d31; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px;
       border-left: 3px solid #5865f2; align-items: center; justify-content: space-between; font-size: 13px; color: #949ba4;
-      margin-bottom: -8px; /* 입력창과 밀착 */
+      margin-bottom: -8px;
     }
     #reply-preview-bar.active { display: flex; }
     .reply-preview-info { display: flex; align-items: center; gap: 6px; overflow: hidden; }
@@ -363,15 +361,14 @@
     import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ 본인의 실제 Firebase Config 키값으로 꼭 수정하세요!
-   const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
-};
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -390,11 +387,17 @@
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
-    let lastTimeElem = null;
 
     // 답장 관리용 변수
     let replyTarget = null;
     let selectedMessageId = null;
+
+    // 안 읽은 메시지 수 관리 (타인 메시지 기준)
+    let unreadCount = 0;
+    window.addEventListener('focus', () => {
+      unreadCount = 0;
+      document.title = "Chat";
+    });
 
     // DOM 요소
     const authContainer = document.getElementById('auth-container');
@@ -660,6 +663,15 @@
         if (!messageHistoryCache.some(m => m.id === msg.id)) {
           messageHistoryCache.push(msg);
           messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
+          
+          // 타인이 보낸 메시지이고 창이 포커스되어 있지 않다면 타이틀에 카운트 표시
+          if (currentUser && msg.uid !== currentUser.uid) {
+            if (!document.hasFocus()) {
+              unreadCount++;
+              document.title = `(${unreadCount}) Chat`;
+            }
+          }
+
           redrawMessages();
         }
       }
@@ -715,13 +727,12 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // --- 메시지 렌더링 ---
+    // --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
     function redrawMessages() {
       messagesDiv.innerHTML = '';
       lastDateStr = null;
       lastSenderId = null;
       lastMinuteStr = null;
-      lastTimeElem = null;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -742,7 +753,7 @@
         row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
         row.dataset.id = msg.id;
 
-        // 1. 아바타 처리
+        // 1. 타인이 보낸 경우: 아바타 먼저 배치
         if (!isMine) {
           const avatar = document.createElement('div');
           avatar.className = 'avatar';
@@ -761,14 +772,18 @@
           row.appendChild(avatar);
         }
 
-        // 2. 컨텐츠 & 시간 구조
-        const timeContainer = document.createElement('div');
-        timeContainer.className = 'time-container';
-        
+        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
+        if (isMine) {
+          const timeDiv = document.createElement('div');
+          timeDiv.className = 'timestamp';
+          timeDiv.innerText = msg.time;
+          row.appendChild(timeDiv);
+        }
+
+        // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        // 3-1. 답장 인용문 (닉네임보다 상단 배치)
         if (msg.replyTo && !msg.isDeleted) {
           const replyQuote = document.createElement('div');
           replyQuote.className = 'reply-quote';
@@ -776,7 +791,6 @@
           content.appendChild(replyQuote);
         }
 
-        // 3-2. 닉네임 (Header) 추가
         if (!isMine && !isConsecutive) {
           const header = document.createElement('div');
           header.className = 'message-header';
@@ -784,7 +798,6 @@
           content.appendChild(header);
         }
 
-        // 4. 버블
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
         
@@ -795,24 +808,15 @@
           bubble.innerText = msg.text || '';
         }
         content.appendChild(bubble);
+        row.appendChild(content);
 
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'timestamp';
-        timeDiv.innerText = msg.time;
-
-        if (isConsecutive && lastTimeElem) {
-          lastTimeElem.style.display = 'none';
+        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
+        if (!isMine) {
+          const timeDiv = document.createElement('div');
+          timeDiv.className = 'timestamp';
+          timeDiv.innerText = msg.time;
+          row.appendChild(timeDiv);
         }
-
-        if (isMine) {
-          timeContainer.appendChild(timeDiv);
-          timeContainer.appendChild(content);
-        } else {
-          timeContainer.appendChild(content);
-          timeContainer.appendChild(timeDiv);
-        }
-
-        row.appendChild(timeContainer);
 
         // 5. 호버 답장 버튼 추가
         if (!msg.isDeleted) {
@@ -829,7 +833,6 @@
 
         messagesDiv.appendChild(row);
 
-        lastTimeElem = timeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
