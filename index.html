@@ -267,7 +267,82 @@
     .btn-save { background-color: #5865f2; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
     .btn-save:hover { background-color: #4752c4; }
     .btn-logout-modal { background-color: #ed4245; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-  </style>
+ /* =========================================
+   답장(Reply) 메시지 프리뷰/말풍선 스타일
+   ========================================= */
+
+/* 메시지 내부의 답장 참조 영역 */
+.message-reply-preview, 
+.reply-reference {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #b5bac1;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #5865f2; /* 디스코드 포인트 색상 */
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message-reply-preview:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 답장 아이콘 (꺾쇠 화살표) */
+.message-reply-preview i,
+.reply-reference i {
+  margin-right: 6px;
+  color: #949ba4;
+  font-size: 11px;
+}
+
+/* 답장 대상자 이름 */
+.reply-author {
+  font-weight: 600;
+  color: #f2f3f5;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* 답장 내용 텍스트 (말줄임표 처리) */
+.reply-content-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dbdee1;
+}
+
+/* 입력창 상단에 표시되는 '답장 작성 중' 바 스타일 */
+#replying-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #2b2d31;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #dbdee1;
+  border-top: 1px solid #1f2023;
+}
+
+#replying-bar .cancel-reply-btn {
+  background: none;
+  border: none;
+  color: #949ba4;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#replying-bar .cancel-reply-btn:hover {
+  color: #f2f3f5;
+}
+ </style>
 </head>
 <body>
 
