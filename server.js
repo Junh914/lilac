@@ -1,5 +1,5 @@
 const express = require('express');
-const http = require('http'); // ⭕ 수정 완료
+const http = require('http'); // ⭕ 중복 대입 제거 확인
 const { Server } = require('socket.io');
 const admin = require('firebase-admin');
 
