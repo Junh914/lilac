@@ -480,6 +480,7 @@
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
+    let lastTimeElem = null;
 
     // 답장 관리용 변수
     let replyTarget = null;
@@ -823,9 +824,6 @@
     // --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
     function redrawMessages() {
       messagesDiv.innerHTML = '';
-      lastTimeElem = timeDiv;
-lastSenderId = msg.uid;
-lastMinuteStr = msg.time;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -866,15 +864,17 @@ lastMinuteStr = msg.time;
         }
 
         // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
+        let currentTimeElem = null;
         if (isMine) {
           const timeDiv = document.createElement('div');
           timeDiv.className = 'timestamp';
           timeDiv.innerText = msg.time;
           row.appendChild(timeDiv);
+          currentTimeElem = timeDiv;
         }
         if (isConsecutive && lastTimeElem) {
-  lastTimeElem.style.display = 'none'; 
-}
+          lastTimeElem.style.display = 'none';
+        }
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
@@ -931,6 +931,7 @@ lastMinuteStr = msg.time;
 
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
+        lastTimeElem = currentTimeElem;
       });
 
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
