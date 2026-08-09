@@ -855,12 +855,19 @@
         }
 
         const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
-        
+
+        // 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
+        // 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
+        // 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
+        if (isConsecutive && lastTimeElem) {
+          lastTimeElem.style.display = 'none';
+        }
+
         const row = document.createElement('div');
         row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
         row.dataset.id = msg.id;
 
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치
+        // 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
         if (!isMine) {
           const avatar = document.createElement('div');
           avatar.className = 'avatar';
@@ -879,17 +886,13 @@
           row.appendChild(avatar);
         }
 
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
-        let myTimeDiv = null;
+        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
+        let timeDiv = null;
         if (isMine) {
-          // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
-          if (isConsecutive && lastTimeElem) {
-            lastTimeElem.style.display = 'none';
-          }
-          myTimeDiv = document.createElement('div');
-          myTimeDiv.className = 'timestamp';
-          myTimeDiv.innerText = msg.time;
-          row.appendChild(myTimeDiv);
+          timeDiv = document.createElement('div');
+          timeDiv.className = 'timestamp';
+          timeDiv.innerText = msg.time;
+          row.appendChild(timeDiv);
         }
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
@@ -922,9 +925,9 @@
         content.appendChild(bubble);
         row.appendChild(content);
 
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
+        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
         if (!isMine) {
-          const timeDiv = document.createElement('div');
+          timeDiv = document.createElement('div');
           timeDiv.className = 'timestamp';
           timeDiv.innerText = msg.time;
           row.appendChild(timeDiv);
@@ -945,7 +948,7 @@
 
         messagesDiv.appendChild(row);
 
-        if (isMine) lastTimeElem = myTimeDiv;
+        lastTimeElem = timeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
