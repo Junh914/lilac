@@ -815,12 +815,12 @@
       if (!selectedMessageId) return;
       try {
         const msgRef = doc(db, "messages", selectedMessageId);
-        await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다." });
+        await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다" });
 
         const cachedMsg = messageHistoryCache.find(m => m.id === selectedMessageId);
         if (cachedMsg) {
           cachedMsg.isDeleted = true;
-          cachedMsg.text = "삭제된 메시지입니다.";
+          cachedMsg.text = "삭제된 메시지입니다";
           redrawMessages();
         }
         socket.emit('delete message', { id: selectedMessageId, channel: currentChannel });
