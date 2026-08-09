@@ -480,6 +480,7 @@
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
+    let lastTimeElem = null;
 
     // 답장 관리용 변수
     let replyTarget = null;
@@ -826,6 +827,7 @@
       lastDateStr = null;
       lastSenderId = null;
       lastMinuteStr = null;
+      lastTimeElem = null;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -866,16 +868,17 @@
         }
 
         // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
+        let myTimeDiv = null;
         if (isMine) {
-         // 불필요한 now 변수를 지우고 msg.time을 그대로 사용하도록 정리합니다.
-const timeDiv = document.createElement('div');
-timeDiv.className = 'timestamp';
-timeDiv.innerText = msg.time;
-
-if (isConsecutive && lastTimeElem) {
-  lastTimeElem.style.display = 'none';
-}
-
+          // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
+          if (isConsecutive && lastTimeElem) {
+            lastTimeElem.style.display = 'none';
+          }
+          myTimeDiv = document.createElement('div');
+          myTimeDiv.className = 'timestamp';
+          myTimeDiv.innerText = msg.time;
+          row.appendChild(myTimeDiv);
+        }
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
@@ -930,6 +933,7 @@ if (isConsecutive && lastTimeElem) {
 
         messagesDiv.appendChild(row);
 
+        if (isMine) lastTimeElem = myTimeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
