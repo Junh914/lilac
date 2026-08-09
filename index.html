@@ -137,12 +137,22 @@
     }
 
     /* 카카오톡 스타일 메시지 행 구조 */
-    .message-row { display: flex; align-items: flex-end; gap: 6px; max-width: 75%; position: relative; }
+    .message-row { display: flex; align-self: flex-end; flex-direction: row-reverse; gap: 6px; max-width: 75%; position: relative; }
     .message-row.mine { align-self: flex-end; }
     .message-row.other { align-self: flex-start; }
     .message-row.consecutive { margin-top: -6px; }
     .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
     .message-row.other.consecutive .message-header { display: none; }
+    .message-row.mine .message-content {
+  align-items: flex-end;
+  text-align: right;
+}
+.message-row.mine .message-reply-preview, 
+.message-row.mine .reply-reference {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+}
 
     /* 아바타 & 컨텐츠 */
     .avatar {
@@ -160,41 +170,11 @@
 }
     
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
-    /* 5. 전체 화면 크기 기준 1/4 (25vw)로 줄바꿈 기준 픽셀수 설정 */
-.message-bubble {
-  display: inline-block;          /* 텍스트 크기에 맞게 말풍선 크기 조절 */
-  width: fit-content;             /* 내용물 크기만큼 너비 지정 */
-  max-width: 25vw !important;     /* 전체 화면 크기 기준 1/4 제한 */
+    .message-bubble {
+      padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
+  max-width: 25vw !important;
   word-break: break-all;
   white-space: pre-wrap;
-}
-
-/* 1 & 2. 본인 메시지 및 답장 메시지 우측 정렬 */
-.message-row.mine {
-  display: flex;
-  flex-direction: row-reverse;
-  justify-content: flex-start;
-  align-items: flex-end;
-  width: 100%;
-}
-
-.message-row.mine .message-content {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.message-row.mine .message-reply-preview {
-  margin-left: auto;
-  margin-right: 0;
-  align-self: flex-end;
-}
-
-/* 4. 2글자 닉네임 등 줄바꿈 깨짐 방지 */
-.reply-author, 
-.message-header .username,
-.message-reply-preview span {
-  white-space: nowrap;
-  word-break: keep-all;
 }
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
@@ -843,9 +823,9 @@
     // --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
     function redrawMessages() {
       messagesDiv.innerHTML = '';
-      lastDateStr = null;
-      lastSenderId = null;
-      lastMinuteStr = null;
+      lastTimeElem = timeDiv;
+lastSenderId = msg.uid;
+lastMinuteStr = msg.time;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -892,6 +872,9 @@
           timeDiv.innerText = msg.time;
           row.appendChild(timeDiv);
         }
+        if (isConsecutive && lastTimeElem) {
+  lastTimeElem.style.display = 'none'; 
+}
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
