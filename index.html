@@ -118,11 +118,7 @@
 
     /* 메인 채팅 영역 */
     .chat-area { flex: 30; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    /* container-type을 지정해 말풍선 최대 너비를 뷰포트가 아닌
-       "채팅 메인 화면(.chat-main)" 실제 너비를 기준으로 계산되게 함.
-       => 사이드바 크기, 연속 메시지 그룹핑, 타임스탬프 표시 여부 등
-          다른 요소의 유무와 관계없이 항상 채팅 메인 화면의 1/4 지점에서 줄바꿈됨 */
-    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; container-type: inline-size; }
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     
     #messages {
       flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
@@ -141,9 +137,7 @@
     }
 
     /* 카카오톡 스타일 메시지 행 구조 */
-    /* align-items: flex-end 로 타임스탬프가 말풍선의 "밑변"에 맞춰지도록 함
-       (기본값 stretch일 경우 타임스탬프 텍스트가 행 상단에 붙어 말풍선과 높이가 어긋남) */
-    .message-row { display: flex; align-self: flex-end; align-items: flex-end; flex-direction: row; gap: 6px; max-width: 75%; position: relative; }
+    .message-row { display: flex; align-self: flex-end; flex-direction: row-reverse; gap: 6px; max-width: 75%; position: relative; }
     .message-row.mine { align-self: flex-end; }
     .message-row.other { align-self: flex-start; }
     .message-row.consecutive { margin-top: -6px; }
@@ -178,18 +172,13 @@
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
       padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
-  /* 뷰포트(vw) 기준이 아니라 채팅 메인 화면(.chat-main)의 실제 너비를 기준으로
-     1/4(25%) 지점에서 줄바꿈되도록 컨테이너 쿼리 단위(cqw)를 사용.
-     사이드바 너비, 같은 시각 연속 메시지 여부(마진 -6px), 타임스탬프 유무 등
-     다른 요소와 무관하게 항상 채팅 메인 화면의 1/4에서 줄바꿈됨. */
+  max-width: 25vw !important;
   word-break: break-all;
   white-space: pre-wrap;
 }
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
-    /* margin-bottom을 제거하여 (.message-row가 align-items: flex-end 이므로)
-       타임스탬프의 밑변이 말풍선(.message-bubble)의 밑변과 정확히 일치하도록 함 */
-    .timestamp { font-size: 10px; color: #949ba4; white-space: nowrap; flex-shrink: 0; }
+    .timestamp { font-size: 10px; color: #949ba4; margin-bottom: 2px; white-space: nowrap; flex-shrink: 0; }
 
     /* 우클릭 삭제 & 삭제된 메시지 디자인 */
     .message-bubble.deleted {
@@ -491,7 +480,6 @@
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
-    let lastTimeElem = null;
 
     // 답장 관리용 변수
     let replyTarget = null;
@@ -814,12 +802,12 @@
       if (!selectedMessageId) return;
       try {
         const msgRef = doc(db, "messages", selectedMessageId);
-        await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다" });
+        await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다." });
 
         const cachedMsg = messageHistoryCache.find(m => m.id === selectedMessageId);
         if (cachedMsg) {
           cachedMsg.isDeleted = true;
-          cachedMsg.text = "삭제된 메시지입니다";
+          cachedMsg.text = "삭제된 메시지입니다.";
           redrawMessages();
         }
         socket.emit('delete message', { id: selectedMessageId, channel: currentChannel });
@@ -838,7 +826,6 @@
       lastDateStr = null;
       lastSenderId = null;
       lastMinuteStr = null;
-      lastTimeElem = null;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -854,19 +841,12 @@
         }
 
         const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
-
-        // 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
-        // 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
-        // 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
-        if (isConsecutive && lastTimeElem) {
-          lastTimeElem.style.display = 'none';
-        }
-
+        
         const row = document.createElement('div');
         row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
         row.dataset.id = msg.id;
 
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
+        // 1. 타인이 보낸 경우: 아바타 먼저 배치
         if (!isMine) {
           const avatar = document.createElement('div');
           avatar.className = 'avatar';
@@ -885,14 +865,17 @@
           row.appendChild(avatar);
         }
 
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
-        let timeDiv = null;
+        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
         if (isMine) {
-          timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
+         // 불필요한 now 변수를 지우고 msg.time을 그대로 사용하도록 정리합니다.
+const timeDiv = document.createElement('div');
+timeDiv.className = 'timestamp';
+timeDiv.innerText = msg.time;
+
+if (isConsecutive && lastTimeElem) {
+  lastTimeElem.style.display = 'none';
+}
+
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
@@ -924,9 +907,9 @@
         content.appendChild(bubble);
         row.appendChild(content);
 
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
+        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
         if (!isMine) {
-          timeDiv = document.createElement('div');
+          const timeDiv = document.createElement('div');
           timeDiv.className = 'timestamp';
           timeDiv.innerText = msg.time;
           row.appendChild(timeDiv);
@@ -947,7 +930,6 @@
 
         messagesDiv.appendChild(row);
 
-        lastTimeElem = timeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
