@@ -25,6 +25,16 @@ io.on('connection', (socket) => {
     io.emit('chat message', msg);
   });
 
+  // 메시지 삭제 이벤트를 다른 모든 클라이언트에게 브로드캐스트
+  socket.on('delete message', (data) => {
+    io.emit('delete message', data);
+  });
+
+  // 메시지 수정 이벤트를 다른 모든 클라이언트에게 브로드캐스트
+  socket.on('edit message', (data) => {
+    io.emit('edit message', data);
+  });
+
   // 사용자의 연결이 끊어졌을 때
   socket.on('disconnect', () => {
     console.log('사용자 연결이 해제되었습니다:', socket.id);
