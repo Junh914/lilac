@@ -118,11 +118,7 @@
 
     /* 메인 채팅 영역 */
     .chat-area { flex: 30; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    /* container-type을 지정해 말풍선 최대 너비를 뷰포트가 아닌
-       "채팅 메인 화면(.chat-main)" 실제 너비를 기준으로 계산되게 함.
-       => 사이드바 크기, 연속 메시지 그룹핑, 타임스탬프 표시 여부 등
-          다른 요소의 유무와 관계없이 항상 채팅 메인 화면 너비를 기준으로 줄바꿈됨 */
-    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; container-type: inline-size; }
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     
     #messages {
       flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
@@ -183,18 +179,13 @@
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
       padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
-  /* 뷰포트(vw) 기준이 아니라 채팅 메인 화면(.chat-main)의 실제 너비를 기준으로
-     줄바꿈되도록 컨테이너 쿼리 단위(cqw)를 사용. 사이드바 너비, 같은 시각 연속
-     메시지 여부, 타임스탬프 유무 등 다른 요소와 무관하게 항상 채팅 메인 화면
-     너비 기준으로 일정하게 줄바꿈됨.
-     기존 1/4(25cqw) 기준 대비 줄바꿈되는 글자 수가 약 2배 가량 되도록
-     50cqw로 상향. width: max-content를 쓰지 않고 기본값(auto)을 사용해,
-     .message-content가 부모(.message-row) 안에서 줄어들 때 말풍선도 함께
-     줄어들도록 함 (그렇지 않으면 말풍선이 부모 박스보다 넓어져 타임스탬프와
-     겹쳐 보이는 버그가 발생함). */
-  max-width: 50cqw;
-  word-break: break-all;
+  /* 화면 너비(cqw) 기준이 아니라 "글자 수" 기준으로 줄바꿈됨.
+     JS의 insertLineBreaks() 함수가 텍스트 30자(LINE_WRAP_LENGTH)마다 실제
+     개행문자(\n)를 삽입해서 렌더링하며, 여기서는 그 개행문자가 그대로
+     줄바꿈으로 표시되도록 white-space: pre-wrap만 유지함
+     (너비 기반 강제 줄바꿈(max-width: cqw)은 사용하지 않음). */
   white-space: pre-wrap;
+  word-break: break-word;
   text-align: left; /* 말풍선이 우측(내 메시지)/좌측(상대 메시지) 벽에 붙는 것과
     무관하게, 말풍선 내부의 텍스트 정렬은 항상 좌측 정렬로 고정 */
 }
@@ -227,10 +218,11 @@
       background-color: #1e1f22; border: 1px solid #5865f2; border-radius: 6px; color: #dbdee1;
       font-size: 14px; font-family: inherit; padding: 8px 10px; resize: none; outline: none; line-height: 1.4;
       text-align: left; box-sizing: border-box;
-      /* 말풍선(.message-bubble)과 동일한 50cqw 폭 기준을 사용해 수정 UI도
-         같은 지점에서 줄바꿈되도록 함. min()으로 부모 컨테이너 폭을 넘지
-         않도록 안전장치를 둠 (우측 벽을 넘어가는 오버플로우 방지). */
-      width: min(50cqw, 100%);
+      /* 말풍선(.message-bubble)과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준
+         폭을 사용해 수정 UI도 같은 지점에서 줄바꿈되도록 함. ch 단위는 폰트의
+         평균 문자 너비를 기준으로 하므로 30자 폭과 비슷하게 맞춰짐. min()으로
+         부모 컨테이너 폭을 넘지 않도록 안전장치를 둠(우측 벽 오버플로우 방지). */
+      width: min(30ch, 100%);
     }
     .message-edit-actions { display: flex; gap: 8px; font-size: 12px; color: #949ba4; }
     .message-edit-actions button {
@@ -486,7 +478,7 @@
           </div>
 
           <form id="message-form" class="chat-input-wrapper">
-            <input type="text" id="message-input" autocomplete="off" placeholder="#general에 메시지 보내기">
+            <input type="text" id="message-input" autocomplete="off" placeholder="#general에 메시지 보내기" maxlength="302">
             <button type="submit" id="send-btn" title="전송">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -761,6 +753,12 @@
       const text = messageInput.value.trim();
       if (!text || !currentUser) return;
 
+      // 메시지 최대 글자수(302자) 제한
+      if (text.length > MAX_MESSAGE_LENGTH) {
+        alert(`메시지는 최대 ${MAX_MESSAGE_LENGTH}자까지 입력할 수 있습니다. (현재 ${text.length}자)`);
+        return;
+      }
+
       const now = new Date();
       const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
       const dateStr = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${days[now.getDay()]}`;
@@ -894,13 +892,13 @@
       const bubble = row.querySelector('.message-bubble');
       if (!content || !bubble) return;
 
-      // 말풍선과 동일하게 max-width: 50cqw(채팅 메인 화면 너비 기준)를 CSS(.edit-textarea)로
+      // 말풍선과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준 폭을 CSS(.edit-textarea)로
       // 지정하므로, 여기서 픽셀 폭을 계산해 강제로 지정하지 않음. (픽셀 값을 강제
       // 지정하면 부모 폭보다 커져 채팅창 우측 벽을 넘어가는 오버플로우가 발생할 수 있음)
       const editBox = document.createElement('div');
       editBox.className = 'message-edit-box';
       editBox.innerHTML = `
-        <textarea class="edit-textarea" rows="1"></textarea>
+        <textarea class="edit-textarea" rows="1" maxlength="${MAX_MESSAGE_LENGTH}"></textarea>
         <div class="message-edit-actions">
           <span>Esc 취소 &middot; Enter 저장</span>
           <button type="button" class="message-edit-save">저장</button>
@@ -964,6 +962,26 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
+    // 줄바꿈 기준 글자수 (30자) : 이 글자수를 넘으면 강제로 줄바꿈(개행)을 삽입함
+    const LINE_WRAP_LENGTH = 30;
+    // 메시지 최대 글자수 (302자) : 전송 가능한 메시지의 최대 길이
+    const MAX_MESSAGE_LENGTH = 302;
+
+    // 텍스트를 LINE_WRAP_LENGTH(30자) 단위로 줄바꿈 처리.
+    // 이미 사용자가 입력한 개행(\n)이 있다면 그 줄 단위로 먼저 나눈 뒤,
+    // 각 줄이 30자를 넘으면 그 줄 안에서도 30자마다 다시 줄바꿈함.
+    function insertLineBreaks(text, limit = LINE_WRAP_LENGTH) {
+      if (!text) return '';
+      return text.split('\n').map((line) => {
+        if (line.length <= limit) return line;
+        const chunks = [];
+        for (let i = 0; i < line.length; i += limit) {
+          chunks.push(line.slice(i, i + limit));
+        }
+        return chunks.join('\n');
+      }).join('\n');
+    }
+
     // --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
     function redrawMessages() {
       messagesDiv.innerHTML = '';
@@ -986,12 +1004,19 @@
         }
 
         const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
-        
+
+        // 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
+        // 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
+        // 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
+        if (isConsecutive && lastTimeElem) {
+          lastTimeElem.style.display = 'none';
+        }
+
         const row = document.createElement('div');
         row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
         row.dataset.id = msg.id;
 
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치
+        // 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
         if (!isMine) {
           const avatar = document.createElement('div');
           avatar.className = 'avatar';
@@ -1010,17 +1035,13 @@
           row.appendChild(avatar);
         }
 
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
-        let myTimeDiv = null;
+        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
+        let timeDiv = null;
         if (isMine) {
-          // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
-          if (isConsecutive && lastTimeElem) {
-            lastTimeElem.style.display = 'none';
-          }
-          myTimeDiv = document.createElement('div');
-          myTimeDiv.className = 'timestamp';
-          myTimeDiv.innerText = msg.time;
-          row.appendChild(myTimeDiv);
+          timeDiv = document.createElement('div');
+          timeDiv.className = 'timestamp';
+          timeDiv.innerText = msg.time;
+          row.appendChild(timeDiv);
         }
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
@@ -1043,15 +1064,16 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        // 줄바꿈 기준(max-width: 50cqw)은 CSS에 고정되어 있으므로 JS에서
-        // 별도의 픽셀 폭 계산/고정(lock) 처리가 필요 없음. 항상 채팅 메인
-        // 화면 너비를 기준으로 동일한 지점에서 줄바꿈됨.
+        // 줄바꿈 기준은 글자 수(30자, LINE_WRAP_LENGTH)이며 insertLineBreaks()가
+        // 렌더링 시점에 텍스트에 개행문자를 삽입하므로, 화면 폭 계산/고정(lock)
+        // 처리가 필요 없음. 항상 30자 지점에서 동일하게 줄바꿈됨.
 
         if (msg.isDeleted) {
           bubble.classList.add('deleted');
           bubble.innerHTML = `<span style="font-size:13px; opacity:0.7;"></span> 삭제된 메시지입니다.`;
         } else {
-          bubble.innerText = msg.text || '';
+          // 줄바꿈 기준 글자수(30자)에 맞춰 강제 개행 삽입 후 표시
+          bubble.innerText = insertLineBreaks(msg.text || '');
           if (msg.isEdited) {
             const editedTag = document.createElement('span');
             editedTag.className = 'edited-tag';
@@ -1062,9 +1084,9 @@
         content.appendChild(bubble);
         row.appendChild(content);
 
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
+        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
         if (!isMine) {
-          const timeDiv = document.createElement('div');
+          timeDiv = document.createElement('div');
           timeDiv.className = 'timestamp';
           timeDiv.innerText = msg.time;
           row.appendChild(timeDiv);
@@ -1085,7 +1107,7 @@
 
         messagesDiv.appendChild(row);
 
-        if (isMine) lastTimeElem = myTimeDiv;
+        lastTimeElem = timeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
