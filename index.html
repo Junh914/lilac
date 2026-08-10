@@ -118,7 +118,11 @@
 
     /* 메인 채팅 영역 */
     .chat-area { flex: 30; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    /* container-type을 지정해 말풍선 최대 너비를 뷰포트가 아닌
+       "채팅 메인 화면(.chat-main)" 실제 너비를 기준으로 계산되게 함.
+       => 사이드바 크기, 연속 메시지 그룹핑, 타임스탬프 표시 여부 등
+          다른 요소의 유무와 관계없이 항상 채팅 메인 화면 너비를 기준으로 줄바꿈됨 */
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; container-type: inline-size; }
     
     #messages {
       flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
@@ -179,14 +183,16 @@
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
       padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
-  /* 줄바꿈 기준을 "채팅창 픽셀 너비의 일부"가 아니라 고정된 "글자 수(ch)"로
-     지정함. ch 단위는 폰트의 숫자 '0' 문자 너비를 1로 계산하므로, 사이드바
-     크기·창 크기·메시지를 보낸 시점과 무관하게 항상 동일한 글자 수 지점에서
-     줄바꿈됨 (= 줄바꿈 기준이 들쭉날쭉해지는 문제 해결).
-     한글은 보통 영문 대비 약 1.7~2배 폭이므로 26ch ≈ 한글 약 13~15자,
-     영문/숫자 혼용 시 최대 26자 정도에서 줄바꿈되도록 설정. */
-  max-width: 26ch;
-  width: max-content;
+  /* 뷰포트(vw) 기준이 아니라 채팅 메인 화면(.chat-main)의 실제 너비를 기준으로
+     줄바꿈되도록 컨테이너 쿼리 단위(cqw)를 사용. 사이드바 너비, 같은 시각 연속
+     메시지 여부, 타임스탬프 유무 등 다른 요소와 무관하게 항상 채팅 메인 화면
+     너비 기준으로 일정하게 줄바꿈됨.
+     기존 1/4(25cqw) 기준 대비 줄바꿈되는 글자 수가 약 2배 가량 되도록
+     50cqw로 상향. width: max-content를 쓰지 않고 기본값(auto)을 사용해,
+     .message-content가 부모(.message-row) 안에서 줄어들 때 말풍선도 함께
+     줄어들도록 함 (그렇지 않으면 말풍선이 부모 박스보다 넓어져 타임스탬프와
+     겹쳐 보이는 버그가 발생함). */
+  max-width: 50cqw;
   word-break: break-all;
   white-space: pre-wrap;
   text-align: left; /* 말풍선이 우측(내 메시지)/좌측(상대 메시지) 벽에 붙는 것과
@@ -221,10 +227,10 @@
       background-color: #1e1f22; border: 1px solid #5865f2; border-radius: 6px; color: #dbdee1;
       font-size: 14px; font-family: inherit; padding: 8px 10px; resize: none; outline: none; line-height: 1.4;
       text-align: left; box-sizing: border-box;
-      /* 말풍선(.message-bubble)과 동일한 26ch 폭 기준을 사용해 수정 UI도
+      /* 말풍선(.message-bubble)과 동일한 50cqw 폭 기준을 사용해 수정 UI도
          같은 지점에서 줄바꿈되도록 함. min()으로 부모 컨테이너 폭을 넘지
          않도록 안전장치를 둠 (우측 벽을 넘어가는 오버플로우 방지). */
-      width: min(26ch, 100%);
+      width: min(50cqw, 100%);
     }
     .message-edit-actions { display: flex; gap: 8px; font-size: 12px; color: #949ba4; }
     .message-edit-actions button {
@@ -888,7 +894,7 @@
       const bubble = row.querySelector('.message-bubble');
       if (!content || !bubble) return;
 
-      // 말풍선과 동일하게 max-width: 26ch(고정 글자 수 기준)를 CSS(.edit-textarea)로
+      // 말풍선과 동일하게 max-width: 50cqw(채팅 메인 화면 너비 기준)를 CSS(.edit-textarea)로
       // 지정하므로, 여기서 픽셀 폭을 계산해 강제로 지정하지 않음. (픽셀 값을 강제
       // 지정하면 부모 폭보다 커져 채팅창 우측 벽을 넘어가는 오버플로우가 발생할 수 있음)
       const editBox = document.createElement('div');
@@ -1037,9 +1043,9 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        // 줄바꿈 기준(max-width: 26ch)은 CSS에 고정되어 있으므로 JS에서
-        // 별도의 픽셀 폭 계산/고정(lock) 처리가 필요 없음. 항상 동일한
-        // 글자 수 지점에서 줄바꿈되고, 사이드바 크기 변경 등에도 영향받지 않음.
+        // 줄바꿈 기준(max-width: 50cqw)은 CSS에 고정되어 있으므로 JS에서
+        // 별도의 픽셀 폭 계산/고정(lock) 처리가 필요 없음. 항상 채팅 메인
+        // 화면 너비를 기준으로 동일한 지점에서 줄바꿈됨.
 
         if (msg.isDeleted) {
           bubble.classList.add('deleted');
