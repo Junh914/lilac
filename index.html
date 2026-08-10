@@ -144,8 +144,7 @@
     .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
     .message-row.other.consecutive .message-header { display: none; }
     .message-row.mine .message-content {
-  align-items: flex-end;
-  text-align: right;
+  text-align: right; /* 내 메시지: 우측 정렬 */
 }
 .message-row.mine .message-reply-preview, 
 .message-row.mine .reply-reference {
@@ -163,18 +162,20 @@
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     
     .message-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* 🔑 중요: 좌측 정렬 및 말풍선 크기 유연화 */
+  display: block;
+  text-align: left; /* 타인 메시지: 좌측 정렬 */
   max-width: 75%;
 }
     
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
     .message-bubble {
-      padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
-  max-width: 25vw !important;
-  word-break: break-all;
+  display: inline-block;
+  padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
+  max-width: 25vw;
+  word-break: break-word;
+  overflow-wrap: break-word;
   white-space: pre-wrap;
+  text-align: left; /* 말풍선 내부 텍스트는 항상 좌측 정렬 (카카오톡 스타일) */
 }
     .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
     .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
@@ -211,6 +212,7 @@
     .reply-quote {
       font-size: 12px; color: #949ba4; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
     }
+    .message-row.mine .reply-quote { justify-content: flex-end; }
     .reply-quote::before { content: "↪"; font-weight: bold; color: #949ba4; }
     .reply-quote-author { font-weight: 600; color: #dbdee1; }
     .reply-quote-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
@@ -480,6 +482,7 @@
     let lastDateStr = null;
     let lastSenderId = null;
     let lastMinuteStr = null;
+    let lastTimeElem = null;
 
     // 답장 관리용 변수
     let replyTarget = null;
@@ -826,6 +829,7 @@
       lastDateStr = null;
       lastSenderId = null;
       lastMinuteStr = null;
+      lastTimeElem = null;
 
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
@@ -866,16 +870,17 @@
         }
 
         // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
+        let myTimeDiv = null;
         if (isMine) {
-         // 불필요한 now 변수를 지우고 msg.time을 그대로 사용하도록 정리합니다.
-const timeDiv = document.createElement('div');
-timeDiv.className = 'timestamp';
-timeDiv.innerText = msg.time;
-
-if (isConsecutive && lastTimeElem) {
-  lastTimeElem.style.display = 'none';
-}
-
+          // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
+          if (isConsecutive && lastTimeElem) {
+            lastTimeElem.style.display = 'none';
+          }
+          myTimeDiv = document.createElement('div');
+          myTimeDiv.className = 'timestamp';
+          myTimeDiv.innerText = msg.time;
+          row.appendChild(myTimeDiv);
+        }
 
         // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
         const content = document.createElement('div');
@@ -930,6 +935,7 @@ if (isConsecutive && lastTimeElem) {
 
         messagesDiv.appendChild(row);
 
+        if (isMine) lastTimeElem = myTimeDiv;
         lastSenderId = msg.uid;
         lastMinuteStr = msg.time;
       });
