@@ -144,8 +144,18 @@ margin: 0 10px; color: #dbdee1; white-space: nowrap;
 /* align-items: flex-end 로 타임스탬프가 말풍선의 "밑변"에 맞춰지도록 함
       (기본값 stretch일 경우 타임스탬프 텍스트가 행 상단에 붙어 말풍선과 높이가 어긋남) */
 .message-row { display: flex; align-self: flex-end; align-items: flex-end; flex-direction: row; gap: 6px; max-width: 75%; position: relative; }
-.message-row.mine { align-self: flex-end; }
-.message-row.other { align-self: flex-start; }
+/* justify-content: flex-end 로 행(.message-row) 내부의 타임스탬프+말풍선을
+   항상 행의 우측 끝에 고정시킴.
+   word-break: break-all 텍스트의 flex-basis 계산 특성상 .message-row 박스의
+   "사용 가능한 폭"이 실제 콘텐츠(말풍선) 폭보다 미세하게 넓게 잡히는 경우가 있는데,
+   justify-content가 없으면(기본값 flex-start) 콘텐츠가 왼쪽부터 채워져 우측에
+   메시지마다 다른 크기의 빈틈이 생기고, 그 결과 말풍선 우측 끝이 들쭉날쭉
+   정렬되는 버그가 발생함(사이드바 크기, 같은 시각 연속 메시지 여부와 무관하게
+   항상 발생). flex-end로 고정하면 메시지 길이와 무관하게 모든 내 메시지
+   말풍선의 우측 끝이, 모든 타인 메시지 말풍선의 좌측 끝이 각각 항상 동일한
+   x좌표에 맞춰짐. */
+.message-row.mine { align-self: flex-end; justify-content: flex-end; }
+.message-row.other { align-self: flex-start; justify-content: flex-start; }
 .message-row.consecutive { margin-top: -6px; }
 .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
 .message-row.other.consecutive .message-header { display: none; }
@@ -854,87 +864,48 @@ messagesDiv.appendChild(divider);
 lastSenderId = null;
 }
 
-        const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
-        
-        const row = document.createElement('div');
-        row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
-        row.dataset.id = msg.id;
+const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
 
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치
-        if (!isMine) {
-          const avatar = document.createElement('div');
-          avatar.className = 'avatar';
-          if (!isConsecutive) {
-            if (isRandom) {
-              avatar.innerText = msg.nickname;
-            } else if (msg.photoURL) {
-              avatar.innerHTML = `<img src="${msg.photoURL}" alt="avatar">`;
-            } else {
-              avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
-            }
-          } else {
-            avatar.style.visibility = 'hidden';
-            avatar.style.height = '0';
-          }
-          row.appendChild(avatar);
-        }
+// 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
+// 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
+// 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
+if (isConsecutive && lastTimeElem) {
+lastTimeElem.style.display = 'none';
+}
 
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
-        let myTimeDiv = null;
-        if (isMine) {
-          // 이전 메시지와 연속일 경우, 위쪽 메시지의 시간 라벨 숨김
-          if (isConsecutive && lastTimeElem) {
-            lastTimeElem.style.display = 'none';
-          }
-          myTimeDiv = document.createElement('div');
-          myTimeDiv.className = 'timestamp';
-          myTimeDiv.innerText = msg.time;
-          row.appendChild(myTimeDiv);
-        }
+const row = document.createElement('div');
+row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
+row.dataset.id = msg.id;
 
-        // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
-        const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
+// 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함)
+if (!isMine) {
+const avatar = document.createElement('div');
+avatar.className = 'avatar';
+if (!isConsecutive) {
+if (isRandom) {
+avatar.innerText = msg.nickname;
+} else if (msg.photoURL) {
+avatar.innerHTML = `<img src="${msg.photoURL}" alt="avatar">`;
+} else {
+avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
+}
+} else {
+avatar.style.visibility = 'hidden';
+avatar.style.height = '0';
+}
+row.appendChild(avatar);
+}
 
-        // 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
-        // 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
-        // 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
-        if (isConsecutive && lastTimeElem) {
-          lastTimeElem.style.display = 'none';
-        }
+// 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (카카오톡 스타일)
+let timeDiv = null;
+if (isMine) {
+timeDiv = document.createElement('div');
+timeDiv.className = 'timestamp';
+timeDiv.innerText = msg.time;
+row.appendChild(timeDiv);
+}
 
-        const row = document.createElement('div');
-        row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
-        row.dataset.id = msg.id;
-
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
-        if (!isMine) {
-          const avatar = document.createElement('div');
-          avatar.className = 'avatar';
-          if (!isConsecutive) {
-            if (isRandom) {
-              avatar.innerText = msg.nickname;
-            } else if (msg.photoURL) {
-              avatar.innerHTML = `<img src="${msg.photoURL}" alt="avatar">`;
-            } else {
-              avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
-            }
-          } else {
-            avatar.style.visibility = 'hidden';
-            avatar.style.height = '0';
-          }
-          row.appendChild(avatar);
-        }
-
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
-        let timeDiv = null;
-        if (isMine) {
-          timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
-
-        // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
+// 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
 const content = document.createElement('div');
 content.className = 'message-content';
 
@@ -964,20 +935,13 @@ bubble.innerText = msg.text || '';
 content.appendChild(bubble);
 row.appendChild(content);
 
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
-        if (!isMine) {
-          const timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
-        if (!isMine) {
-          timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
+// 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (카카오톡 스타일)
+if (!isMine) {
+timeDiv = document.createElement('div');
+timeDiv.className = 'timestamp';
+timeDiv.innerText = msg.time;
+row.appendChild(timeDiv);
+}
 
 // 5. 호버 답장 버튼 추가
 if (!msg.isDeleted) {
@@ -994,10 +958,8 @@ row.appendChild(hoverActions);
 
 messagesDiv.appendChild(row);
 
-        if (isMine) lastTimeElem = myTimeDiv;
-        lastSenderId = msg.uid;
-        lastTimeElem = timeDiv;
-        lastSenderId = msg.uid;
+lastTimeElem = timeDiv;
+lastSenderId = msg.uid;
 lastMinuteStr = msg.time;
 });
 
