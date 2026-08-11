@@ -173,7 +173,16 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* 🔑 중요: 좌측 정렬 및 말풍선 크기 유연화 */
-  max-width: 75%;
+  /* max-width: 75%를 여기(자식)에 중복으로 걸면, 부모인 .message-row가
+     shrink-to-fit(자동 크기) 방식으로 폭이 정해지는 flex 컨테이너라서
+     서로의 폭이 순환 참조되는 문제가 생김. 이로 인해 연속 메시지 추가/삭제 시
+     형제 요소(.timestamp)의 display가 none으로 토글될 때마다 .message-row의
+     shrink-to-fit 폭이 재계산되고, 그 결과 이미 그려진(텍스트가 바뀌지 않은)
+     말풍선의 max-width(%)도 함께 재계산되어 폭이 흔들리는 버그가 발생함.
+     바깥쪽 .message-row의 max-width: 75%만으로 충분히 제한되므로 여기서는
+     제거하고, 대신 flex item의 기본 min-width:auto로 인한 오버플로우 방지를
+     위해 min-width: 0을 지정함. */
+  min-width: 0;
 }
     
     .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
