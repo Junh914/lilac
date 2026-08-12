@@ -397,6 +397,51 @@
 #replying-bar .cancel-reply-btn:hover {
   color: #f2f3f5;
 }
+
+/* =========================================
+   읽지 않은 메시지 표시 (디스코드 스타일)
+   ========================================= */
+
+/* 화면 상단 고정 안내 바: "오후 HH:MM 이후로 읽지 않은 메시지가 N개 있어요" */
+#unread-banner {
+  display: none;
+  padding: 8px 16px;
+  background-color: #5865f2;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+#unread-banner.active { display: block; }
+#unread-banner:hover { background-color: #4752c4; }
+#unread-banner b { font-weight: 700; }
+
+/* 메시지 목록 안에서 안 읽은 첫 메시지 위에 표시되는 "신규" 구분선 */
+.new-messages-divider {
+  display: flex;
+  align-items: center;
+  margin: 4px 0 10px 0;
+}
+.new-messages-divider::before {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #4e5058;
+}
+.new-messages-badge {
+  background-color: #f23f43;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 14px 3px 10px;
+  white-space: nowrap;
+  margin-left: 4px;
+  /* 우측 끝이 화살표(꺾쇠) 모양으로 뾰족하게 잘리도록 clip-path 사용 */
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+}
  </style>
 </head>
 <body>
@@ -472,6 +517,7 @@
     <div class="chat-area">
       <div class="chat-main">
         <div class="chat-header" id="current-channel-title"># general</div>
+        <div id="unread-banner"></div>
         <div id="messages"></div>
         
         <div class="chat-input-area">
@@ -544,11 +590,22 @@
       document.title = "Chat";
     });
 
+    // 채널별 "읽지 않은 메시지" 표시 (디스코드 스타일) 관리용 변수
+    // lastReadTimestamps: { [channel]: timestamp } - 채널별로 사용자가 마지막으로 읽은 시각
+    let lastReadTimestamps = {};
+    // 현재 채널에 표시 중인 "읽지 않은 메시지" 정보 (없으면 null)
+    // { count: 개수, firstUnreadId: 신규 구분선을 표시할 첫 메시지 id, sinceTs: 안내 문구용 마지막 읽은 시각(ms) }
+    let unreadInfo = null;
+    // 채널을 새로 불러온 직후, 스크롤을 맨 아래가 아니라 "신규" 구분선 위치로
+    // 이동시켜야 하는지 여부를 나타내는 플래그 (redrawMessages()가 참조함)
+    let pendingScrollToUnread = false;
+
     // DOM 요소
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
+    const unreadBanner = document.getElementById('unread-banner');
 
     const replyPreviewBar = document.getElementById('reply-preview-bar');
     const replyTargetName = document.getElementById('reply-target-name');
@@ -628,6 +685,7 @@
         authContainer.style.display = 'none';
         appContainer.style.display = 'flex';
         updateUserUI(currentUser);
+        loadLastReadTimestamps();
         loadChannelHistory(currentChannel);
       } else {
         currentUser = null;
@@ -739,6 +797,97 @@
 
     cancelReplyBtn.addEventListener('click', clearReplyTarget);
 
+    // --- 읽지 않은 메시지 (디스코드 스타일) 관리 ---
+
+    // localStorage에 채널별 마지막 읽은 시각을 저장/복원 (로그인 유저 uid별로 구분)
+    function getReadStateStorageKey() {
+      return `lilac_last_read_${currentUser ? currentUser.uid : 'anon'}`;
+    }
+    function loadLastReadTimestamps() {
+      try {
+        const raw = localStorage.getItem(getReadStateStorageKey());
+        lastReadTimestamps = raw ? JSON.parse(raw) : {};
+      } catch (e) { lastReadTimestamps = {}; }
+    }
+    function saveLastReadTimestamps() {
+      try {
+        localStorage.setItem(getReadStateStorageKey(), JSON.stringify(lastReadTimestamps));
+      } catch (e) { /* 저장 실패는 무시 (예: 시크릿 모드 등) */ }
+    }
+
+    // 오후 HH:MM 형식으로 타임스탬프(ms)를 변환 (안내 배너 문구용)
+    function formatTimeForBanner(ts) {
+      const d = new Date(ts);
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? '오후' : '오전';
+      hours = hours % 12 || 12;
+      return `${ampm} ${hours}:${minutes}`;
+    }
+
+    // 현재 채널 메시지 캐시를 기준으로, 마지막으로 읽은 시각 이후에 "타인이 보낸"
+    // 메시지가 있는지 계산하여 unreadInfo를 갱신함. 채널 전환/최초 로드 시에만 호출.
+    function computeUnreadInfo(channel) {
+      // 이 채널에 한 번도 들어온 적이 없다면(저장된 읽음 기록이 없다면),
+      // 과거 전체 히스토리를 "안 읽은 메시지"로 표시하지 않고 바로 읽음 처리함
+      // (디스코드도 채널에 처음 들어가면 안 읽은 표시를 과거 전체에 걸지 않음).
+      const hasReadBefore = Object.prototype.hasOwnProperty.call(lastReadTimestamps, channel);
+      if (!hasReadBefore) {
+        lastReadTimestamps[channel] = Date.now();
+        saveLastReadTimestamps();
+        unreadInfo = null;
+        return;
+      }
+
+      const lastRead = lastReadTimestamps[channel];
+      const unreadMsgs = messageHistoryCache.filter(
+        (m) => (m.timestamp || 0) > lastRead && currentUser && m.uid !== currentUser.uid
+      );
+      if (unreadMsgs.length === 0) {
+        unreadInfo = null;
+        return;
+      }
+      unreadInfo = {
+        count: unreadMsgs.length,
+        firstUnreadId: unreadMsgs[0].id,
+        sinceTs: lastRead
+      };
+    }
+
+    // 현재 채널을 "읽음" 상태로 표시 (신규 구분선/배너 제거 + 마지막 읽은 시각 갱신)
+    function markChannelAsRead(channel) {
+      lastReadTimestamps[channel] = Date.now();
+      saveLastReadTimestamps();
+      unreadInfo = null;
+      unreadBanner.classList.remove('active');
+    }
+
+    // 창에 포커스가 돌아오면(사용자가 현재 보고 있던 채널을 계속 보는 상태이므로)
+    // 현재 채널을 읽음 처리함
+    window.addEventListener('focus', () => {
+      if (currentUser && currentChannel) {
+        markChannelAsRead(currentChannel);
+      }
+    });
+
+    // 사용자가 메시지 목록을 스크롤해서 맨 아래(최신 메시지)까지 내려보면
+    // 읽음 처리함 (신규 구분선/배너가 계속 남아있지 않도록)
+    messagesDiv.addEventListener('scroll', () => {
+      if (!unreadInfo) return;
+      const distanceFromBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight;
+      if (distanceFromBottom < 30) {
+        markChannelAsRead(currentChannel);
+      }
+    });
+
+    // 상단 안내 배너를 클릭하면 "신규" 구분선 위치로 스크롤 이동
+    unreadBanner.addEventListener('click', () => {
+      const dividerElem = messagesDiv.querySelector('.new-messages-divider');
+      if (dividerElem) {
+        dividerElem.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    });
+
     // --- DB 메시지 불러오기 ---
     async function loadChannelHistory(channel) {
       messagesDiv.innerHTML = '';
@@ -752,6 +901,8 @@
           if (!messageHistoryCache.some(m => m.id === msg.id)) messageHistoryCache.push(msg);
         });
         messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
+        computeUnreadInfo(channel);
+        pendingScrollToUnread = !!unreadInfo;
         redrawMessages();
       } catch (e) { console.error("채팅 로드 오류:", e); }
     }
@@ -813,14 +964,38 @@
       if (msg.channel === currentChannel) {
         if (!msg.id) msg.id = 'temp_' + Date.now();
         if (!messageHistoryCache.some(m => m.id === msg.id)) {
+          // 새 메시지가 추가되기 전, 사용자가 이미 스크롤 맨 아래에 있는지 확인
+          // (메시지가 추가되면 scrollHeight가 커지므로 미리 판단해야 함)
+          const wasAtBottom = (messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight) < 30;
+
           messageHistoryCache.push(msg);
           messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
-          
-          // 타인이 보낸 메시지이고 창이 포커스되어 있지 않다면 타이틀에 카운트 표시
-          if (currentUser && msg.uid !== currentUser.uid) {
+
+          const isFromOther = currentUser && msg.uid !== currentUser.uid;
+
+          if (isFromOther) {
+            // 타인이 보낸 메시지이고 창이 포커스되어 있지 않다면 타이틀에 카운트 표시
             if (!document.hasFocus()) {
               unreadCount++;
               document.title = `(${unreadCount}) Chat`;
+            }
+
+            if (document.hasFocus() && wasAtBottom) {
+              // 창에 포커스가 있고 이미 맨 아래를 보고 있었다면, 방금 도착한
+              // 메시지도 바로 읽은 것으로 간주 (신규 표시를 띄우지 않음)
+              lastReadTimestamps[currentChannel] = msg.timestamp || Date.now();
+              saveLastReadTimestamps();
+              unreadInfo = null;
+            } else if (unreadInfo) {
+              // 이미 안 읽은 메시지가 있던 상태라면 개수만 증가 (구분선 위치는 유지)
+              unreadInfo.count++;
+            } else {
+              // 처음으로 안 읽은 메시지가 발생한 경우: 구분선을 이 메시지 위치에 표시
+              unreadInfo = {
+                count: 1,
+                firstUnreadId: msg.id,
+                sinceTs: lastReadTimestamps[currentChannel] || Date.now()
+              };
             }
           }
 
@@ -999,6 +1174,17 @@
       lastMinuteStr = null;
       lastTimeElem = null;
 
+      // 신규 구분선(디스코드 스타일)이 실제로 그려졌는지 추적 (스크롤 위치 결정용)
+      let newDividerElem = null;
+
+      // 상단 "읽지 않은 메시지" 안내 배너 갱신
+      if (unreadInfo && unreadInfo.count > 0) {
+        unreadBanner.innerHTML = `<b>${formatTimeForBanner(unreadInfo.sinceTs)}</b> 이후로 읽지 않은 메시지가 <b>${unreadInfo.count}</b>개 있어요`;
+        unreadBanner.classList.add('active');
+      } else {
+        unreadBanner.classList.remove('active');
+      }
+
       messageHistoryCache.forEach((msg) => {
         const isMine = currentUser && (msg.uid === currentUser.uid);
         const isRandom = (msg.channel === 'random');
@@ -1009,6 +1195,18 @@
           divider.className = 'date-divider';
           divider.innerHTML = `<span>${msg.date}</span>`;
           messagesDiv.appendChild(divider);
+          lastSenderId = null;
+        }
+
+        // 안 읽은 첫 메시지 바로 위에 "신규" 구분선을 삽입 (디스코드 스타일)
+        if (unreadInfo && msg.id === unreadInfo.firstUnreadId) {
+          const newDivider = document.createElement('div');
+          newDivider.className = 'new-messages-divider';
+          newDivider.innerHTML = `<span class="new-messages-badge">신규</span>`;
+          messagesDiv.appendChild(newDivider);
+          newDividerElem = newDivider;
+          // 구분선으로 시각적으로 분리되었으므로, 날짜 구분선과 동일하게
+          // 그룹핑을 리셋하여 구분선 아래 메시지에는 아바타/닉네임이 다시 표시되도록 함
           lastSenderId = null;
         }
 
@@ -1121,7 +1319,16 @@
         lastMinuteStr = msg.time;
       });
 
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      // 채널을 새로 열었을 때 안 읽은 메시지가 있다면, 맨 아래가 아니라
+      // "신규" 구분선이 화면 상단 근처에 보이도록 스크롤 위치를 맞춤
+      // (디스코드처럼 안 읽은 첫 메시지부터 확인할 수 있도록 함).
+      if (pendingScrollToUnread && newDividerElem) {
+        pendingScrollToUnread = false;
+        newDividerElem.scrollIntoView({ block: 'start' });
+      } else {
+        pendingScrollToUnread = false;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
     }
   </script>
 </body>
