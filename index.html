@@ -421,11 +421,22 @@
 
 /* 메시지 목록 안에서 안 읽은 첫 메시지 위에 표시되는 "신규" 구분선
    - 얇은 빨간 선이 우측 끝까지 이어지다가, "신규" 배지 좌측의 뾰족한
-     화살표(꼬리) 끝점에서 정확히 맞닿아 끊기는 리본 형태 디자인. */
+     화살표(꼬리) 끝점에서 정확히 맞닿아 끊기는 리본 형태 디자인.
+   - [버그 수정] 화살표(꼬리) 삼각형이 기존에는 top: 0 으로 배지의
+     "위쪽 끝"에 고정되어 있었음. 하지만 삼각형 자체의 높이(border-top
+     12px + border-bottom 12px = 24px)가 배지의 실제 높이(약 28px)보다
+     작아서, top:0 기준으로는 삼각형이 배지보다 위로 약 2px 짧게 끝나
+     삼각형 뾰족한 끝점이 구분선(가로줄)과 정확히 맞닿지 않고 살짝
+     어긋나 보이는 문제가 있었음.
+     => top: 50% + transform: translateY(-50%) 로 배지의 실제 높이와
+        무관하게 항상 배지의 "세로 중앙"에 삼각형이 오도록 수정하여,
+        가로줄(구분선)과 삼각형 끝점이 항상 정확히 일치하게 함.
+   - 전체 크기도 소폭 축소(margin/font-size/padding/border-radius/
+     삼각형 크기)하여 어색하지 않게 조금 더 컴팩트하게 조정. */
 .new-messages-divider {
   display: flex;
   align-items: center;
-  margin: 8px 0 14px 0;
+  margin: 6px 0 12px 0;
 }
 .new-messages-divider::before {
   content: '';
@@ -439,28 +450,31 @@
   align-items: center;
   background-color: #e0323c;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
-  padding: 5px 14px 5px 10px;
+  padding: 4px 12px 4px 9px;
   white-space: nowrap;
   /* 좌측은 각지게, 우측은 필(pill) 형태로 둥글게 */
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 10px 10px 0;
   /* 좌측 화살표(꼬리) 삼각형이 들어갈 공간 확보 */
-  margin-left: 12px;
+  margin-left: 10px;
 }
 /* 배지 좌측의 뾰족한 화살표(꼬리) 부분: border trick으로 좌측을 향한
-   삼각형을 만들어 구분선과 배지가 하나로 이어지는 리본 모양을 구현 */
+   삼각형을 만들어 구분선과 배지가 하나로 이어지는 리본 모양을 구현.
+   top: 50% + translateY(-50%)로 배지의 세로 중앙에 정확히 위치시켜
+   구분선(가로줄)과 삼각형 끝점이 항상 일치하도록 함. */
 .new-messages-badge::before {
   content: '';
   position: absolute;
-  left: -12px;
-  top: 0;
+  left: -10px;
+  top: 50%;
   width: 0;
   height: 0;
-  border-top: 12px solid transparent;
-  border-bottom: 12px solid transparent;
-  border-right: 12px solid #e0323c;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 10px solid #e0323c;
+  transform: translateY(-50%);
 }
  </style>
 </head>
