@@ -1,178 +1,179 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 0; height: 100vh;
-      background-color: #313338; color: #dbdee1;
-      font-family: 'Noto Sans KR', sans-serif, system-ui;
-      display: flex; justify-content: center; align-items: center;
-      user-select: none;
-      overflow: hidden;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* { box-sizing: border-box; }
+body {
+margin: 0; padding: 0; height: 100vh;
+background-color: #313338; color: #dbdee1;
+font-family: 'Noto Sans KR', sans-serif, system-ui;
+display: flex; justify-content: center; align-items: center;
+user-select: none;
+overflow: hidden;
+}
 
-    /* 밝고 더 굵어진 커스텀 스크롤바 설정 */
-    ::-webkit-scrollbar { width: 9.5px; height: 9.5px; }
-    ::-webkit-scrollbar-track { background: #2b2d31; border-radius: 5px; }
-    ::-webkit-scrollbar-thumb { background: #80848e; border-radius: 5px; }
-    ::-webkit-scrollbar-thumb:hover { background: #b5bac1; }
+/* 밝고 더 굵어진 커스텀 스크롤바 설정 */
+::-webkit-scrollbar { width: 9.5px; height: 9.5px; }
+::-webkit-scrollbar-track { background: #2b2d31; border-radius: 5px; }
+::-webkit-scrollbar-thumb { background: #80848e; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #b5bac1; }
 
-    /* 로그인 화면 */
-    #auth-container {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      width: 100%; height: 100vh; background-color: #313338;
-      position: absolute; top: 0; left: 0; z-index: 10;
-    }
-    .auth-box {
-      background-color: #2b2d31; padding: 30px; border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 350px;
-      display: flex; flex-direction: column; gap: 12px; text-align: center;
-    }
-    .auth-box h2 { color: #f2f3f5; margin-top: 0; margin-bottom: 5px; }
-    .auth-box input {
-      background-color: #1e1f22; border: 1px solid #1e1f22; border-radius: 4px;
-      padding: 10px; color: #dbdee1; font-size: 14px; outline: none;
-    }
-    .auth-box button#auth-action-btn {
-      padding: 10px; border-radius: 4px; border: none; margin-top: 5px;
-      background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; font-size: 14px;
-    }
-    .auth-box button#auth-action-btn:hover { background-color: #4752c4; }
-    .toggle-link-text {
-      color: #949ba4; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 6px;
-    }
-    .toggle-link-text:hover { color: #00a8fc; }
+/* 로그인 화면 */
+#auth-container {
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+width: 100%; height: 100vh; background-color: #313338;
+position: absolute; top: 0; left: 0; z-index: 10;
+}
+.auth-box {
+background-color: #2b2d31; padding: 30px; border-radius: 8px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 350px;
+display: flex; flex-direction: column; gap: 12px; text-align: center;
+}
+.auth-box h2 { color: #f2f3f5; margin-top: 0; margin-bottom: 5px; }
+.auth-box input {
+background-color: #1e1f22; border: 1px solid #1e1f22; border-radius: 4px;
+padding: 10px; color: #dbdee1; font-size: 14px; outline: none;
+}
+.auth-box button#auth-action-btn {
+padding: 10px; border-radius: 4px; border: none; margin-top: 5px;
+background-color: #5865f2; color: white; font-weight: bold; cursor: pointer; font-size: 14px;
+}
+.auth-box button#auth-action-btn:hover { background-color: #4752c4; }
+.toggle-link-text {
+color: #949ba4; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 6px;
+}
+.toggle-link-text:hover { color: #00a8fc; }
 
-    /* 메인 앱 레이아웃 */
-    #app-container {
-      display: none; width: 100vw; height: 100vh; background-color: #313338;
-      flex-direction: row; overflow: hidden;
-    }
+/* 메인 앱 레이아웃 */
+#app-container {
+display: none; width: 100vw; height: 100vh; background-color: #313338;
+flex-direction: row; overflow: hidden;
+}
 
-    /* 사이드바 */
-    .sidebar {
-      flex: 6.4; min-width: 180px; max-width: 400px;
-      background-color: #2b2d31; display: flex; flex-direction: column;
-      border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
-    }
-    .sidebar-resizer {
-      width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
-      cursor: ew-resize; z-index: 10; background-color: transparent;
-    }
-    .sidebar-resizer:hover::after, .sidebar-resizer.resizing::after {
-      content: ''; position: absolute; left: 2px; top: 0; width: 2px; height: 100%;
-      background-color: #5865f2;
-    }
+/* 사이드바 */
+.sidebar {
+flex: 6.4; min-width: 180px; max-width: 400px;
+background-color: #2b2d31; display: flex; flex-direction: column;
+border-right: 1px solid #1f2023; position: relative; flex-shrink: 0;
+}
+.sidebar-resizer {
+width: 6px; height: 100%; position: absolute; right: -3px; top: 0;
+cursor: ew-resize; z-index: 10; background-color: transparent;
+}
+.sidebar-resizer:hover::after, .sidebar-resizer.resizing::after {
+content: ''; position: absolute; left: 2px; top: 0; width: 2px; height: 100%;
+background-color: #5865f2;
+}
 
-    /* 상단 헤더 (사이드바 + 채팅창) */
-    .sidebar-header, .chat-header {
-      height: 48px; padding: 0 16px; display: flex; align-items: center;
-      font-weight: bold; font-size: 16px; color: #f2f3f5;
-      border-bottom: 1px solid #1f2023; box-sizing: border-box;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+/* 상단 헤더 (사이드바 + 채팅창) */
+.sidebar-header, .chat-header {
+height: 48px; padding: 0 16px; display: flex; align-items: center;
+font-weight: bold; font-size: 16px; color: #f2f3f5;
+border-bottom: 1px solid #1f2023; box-sizing: border-box;
+white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
-    /* 채널 리스트 */
-    .channel-list { flex: 1; padding: 16px; overflow-y: auto; }
-    .channel-item {
-      padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer;
-      font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .channel-item.active { background-color: #404249; color: #f2f3f5; }
+/* 채널 리스트 */
+.channel-list { flex: 1; padding: 16px; overflow-y: auto; }
+.channel-item {
+padding: 8px 10px; border-radius: 4px; color: #949ba4; cursor: pointer;
+font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.channel-item.active { background-color: #404249; color: #f2f3f5; }
 
-    /* 하단 유저 패널 */
-    .user-panel {
-      height: 60px; background-color: #232428; display: flex;
-      align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0;
-    }
-    .user-profile-info {
-      display: flex; align-items: center; gap: 8px; overflow: hidden; cursor: pointer; flex: 1; min-width: 0;
-    }
-    .user-avatar-small {
-      width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2;
-      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;
-      font-size: 14px; overflow: hidden; flex-shrink: 0;
-    }
-    .user-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
-    .user-name-tag { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-    .user-display-name {
-      font-size: 14px; font-weight: bold; color: #f2f3f5;
-      white-space: nowrap; text-overflow: ellipsis; overflow: hidden;
-    }
-    .user-status { font-size: 11px; color: #23a55a; }
-    
-    .settings-icon-btn {
-      background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px;
-      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    }
-    .settings-icon-btn img {
-      width: 18px; height: 18px; object-fit: contain; filter: brightness(0.8); transition: filter 0.2s;
-    }
-    .settings-icon-btn:hover { background-color: #35373c; }
-    .settings-icon-btn:hover img { filter: brightness(1); }
+/* 하단 유저 패널 */
+.user-panel {
+height: 60px; background-color: #232428; display: flex;
+align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0;
+}
+.user-profile-info {
+display: flex; align-items: center; gap: 8px; overflow: hidden; cursor: pointer; flex: 1; min-width: 0;
+}
+.user-avatar-small {
+width: 36px; height: 36px; border-radius: 50%; background-color: #5865f2;
+display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;
+font-size: 14px; overflow: hidden; flex-shrink: 0;
+}
+.user-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+.user-name-tag { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.user-display-name {
+font-size: 14px; font-weight: bold; color: #f2f3f5;
+white-space: nowrap; text-overflow: ellipsis; overflow: hidden;
+}
+.user-status { font-size: 11px; color: #23a55a; }
 
-    /* 메인 채팅 영역 */
-    .chat-area { flex: 30; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    
-    #messages {
-      flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-    }
+.settings-icon-btn {
+background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px;
+flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+}
+.settings-icon-btn img {
+width: 18px; height: 18px; object-fit: contain; filter: brightness(0.8); transition: filter 0.2s;
+}
+.settings-icon-btn:hover { background-color: #35373c; }
+.settings-icon-btn:hover img { filter: brightness(1); }
 
-    /* 날짜 구분선 */
-    .date-divider {
-      display: flex; align-items: center; text-align: center; margin: 20px 0; color: #949ba4; font-size: 12px; font-weight: 600;
-    }
-    .date-divider::before, .date-divider::after {
-      content: ''; flex: 1; border-bottom: 1px solid #3f444b;
-    }
-    .date-divider span {
-      padding: 4px 12px; background-color: #2b2d31; border: 1px solid #3f444b; border-radius: 12px;
-      margin: 0 10px; color: #dbdee1; white-space: nowrap;
-    }
+/* 메인 채팅 영역 */
+.chat-area { flex: 30; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* 카카오톡 스타일 메시지 행 구조 */
-    /* align-items: flex-end 로 타임스탬프가 말풍선의 "밑변"에 맞춰지도록 함
-       (기본값 stretch일 경우 타임스탬프 텍스트가 행 상단에 붙어 말풍선과 높이가 어긋남) */
-    .message-row { display: flex; align-self: flex-end; align-items: flex-end; flex-direction: row; gap: 6px; max-width: 75%; position: relative; }
-    /* justify-content를 명시하지 않으면, 말풍선 텍스트가 줄바꿈되어
-       .message-bubble의 실제 렌더링 너비가 flex 계산 시점의 너비보다
-       작아질 경우 .message-row 내부에 빈 공간이 남아 말풍선이
-       우측 벽(.mine)/좌측 벽(.other)에 완전히 붙지 않는 버그가 발생함.
-       justify-content로 명시적으로 밀어붙여 항상 벽에 고정되도록 함. */
-    .message-row.mine { align-self: flex-end; justify-content: flex-end; }
-    .message-row.other { align-self: flex-start; justify-content: flex-start; }
-    .message-row.consecutive { margin-top: -6px; }
-    .message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
-    .message-row.other.consecutive .message-header { display: none; }
-    .message-row.mine .message-content {
-  align-items: flex-end; /* 말풍선 자체는 우측 벽에 붙이되, 말풍선 내부 텍스트는
-    .message-bubble에서 text-align: left로 강제하여 항상 좌측 정렬되도록 함 */
+#messages {
+flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+}
+
+/* 날짜 구분선 */
+.date-divider {
+display: flex; align-items: center; text-align: center; margin: 20px 0; color: #949ba4; font-size: 12px; font-weight: 600;
+}
+.date-divider::before, .date-divider::after {
+content: ''; flex: 1; border-bottom: 1px solid #3f444b;
+}
+.date-divider span {
+padding: 4px 12px; background-color: #2b2d31; border: 1px solid #3f444b; border-radius: 12px;
+margin: 0 10px; color: #dbdee1; white-space: nowrap;
+}
+
+/* 카카오톡 스타일 메시지 행 구조 */
+/* align-items: flex-end 로 타임스탬프가 말풍선의 "밑변"에 맞춰지도록 함
+      (기본값 stretch일 경우 타임스탬프 텍스트가 행 상단에 붙어 말풍선과 높이가 어긋남) */
+.message-row { display: flex; align-self: flex-end; align-items: flex-end; flex-direction: row; gap: 6px; max-width: 75%; position: relative; }
+/* justify-content를 명시하지 않으면, 말풍선 텍스트가 줄바꿈되어
+      .message-bubble의 실제 렌더링 너비가 flex 계산 시점의 너비보다
+      작아질 경우 .message-row 내부에 빈 공간이 남아 말풍선이
+      우측 벽(.mine)/좌측 벽(.other)에 완전히 붙지 않는 버그가 발생함.
+      justify-content로 명시적으로 밀어붙여 항상 벽에 고정되도록 함. */
+.message-row.mine { align-self: flex-end; justify-content: flex-end; }
+.message-row.other { align-self: flex-start; justify-content: flex-start; }
+.message-row.consecutive { margin-top: -6px; }
+.message-row.other.consecutive .avatar { visibility: hidden; height: 0; }
+.message-row.other.consecutive .message-header { display: none; }
+.message-row.mine .message-content {
+align-items: flex-end; /* 말풍선 자체는 우측 벽에 붙이되, 말풍선 내부 텍스트는
+   .message-bubble에서 text-align: left로 강제하여 항상 좌측 정렬되도록 함 */
 }
 .message-row.mine .message-reply-preview, 
 .message-row.mine .reply-reference {
-  align-self: flex-end;
-  margin-left: auto;
-  margin-right: 0;
+align-self: flex-end;
+margin-left: auto;
+margin-right: 0;
 }
 
-    /* 아바타 & 컨텐츠 */
-    .avatar {
-      width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2;
-      display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;
-      font-size: 15px; flex-shrink: 0; overflow: hidden;
-    }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .message-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* 🔑 중요: 좌측 정렬 및 말풍선 크기 유연화 */
+/* 아바타 & 컨텐츠 */
+.avatar {
+width: 38px; height: 38px; border-radius: 50%; background-color: #5865f2;
+display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;
+font-size: 15px; flex-shrink: 0; overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.message-content {
+display: flex;
+flex-direction: column;
+align-items: flex-start; /* 🔑 중요: 좌측 정렬 및 말풍선 크기 유연화 */
+  max-width: 75%;
   /* max-width: 75%를 여기(자식)에 중복으로 걸면, 부모인 .message-row가
      shrink-to-fit(자동 크기) 방식으로 폭이 정해지는 flex 컨테이너라서
      서로의 폭이 순환 참조되는 문제가 생김. 이로 인해 연속 메시지 추가/삭제 시
@@ -184,1208 +185,945 @@
      위해 min-width: 0을 지정함. */
   min-width: 0;
 }
-    
-    .message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
-    .message-bubble {
-      padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
-  /* 화면 너비(cqw) 기준이 아니라 "글자 수" 기준으로 줄바꿈됨.
-     JS의 insertLineBreaks() 함수가 텍스트 30자(LINE_WRAP_LENGTH)마다 실제
-     개행문자(\n)를 삽입해서 렌더링하며, 여기서는 그 개행문자가 그대로
-     줄바꿈으로 표시되도록 white-space: pre-wrap만 유지함
-     (너비 기반 강제 줄바꿈(max-width: cqw)은 사용하지 않음). */
-  white-space: pre-wrap;
-  word-break: break-word;
-  text-align: left; /* 말풍선이 우측(내 메시지)/좌측(상대 메시지) 벽에 붙는 것과
-    무관하게, 말풍선 내부의 텍스트 정렬은 항상 좌측 정렬로 고정 */
+
+.message-header { font-size: 12px; color: #f2f3f5; font-weight: bold; margin-bottom: 2px; display: flex; gap: 8px; align-items: baseline; }
+.message-bubble {
+padding: 10px 14px; font-size: 14px; line-height: 1.4; border-radius: 12px;
+/* 화면 너비(cqw) 기준이 아니라 "글자 수" 기준으로 줄바꿈됨.
+    JS의 insertLineBreaks() 함수가 텍스트 30자(LINE_WRAP_LENGTH)마다 실제
+    개행문자(\n)를 삽입해서 렌더링하며, 여기서는 그 개행문자가 그대로
+    줄바꿈으로 표시되도록 white-space: pre-wrap만 유지함
+    (너비 기반 강제 줄바꿈(max-width: cqw)은 사용하지 않음). */
+white-space: pre-wrap;
+word-break: break-word;
+text-align: left; /* 말풍선이 우측(내 메시지)/좌측(상대 메시지) 벽에 붙는 것과
+   무관하게, 말풍선 내부의 텍스트 정렬은 항상 좌측 정렬로 고정 */
 }
-    .message-bubble .edited-tag { font-size: 10px; opacity: 0.65; margin-left: 4px; font-style: italic; display: inline-block; }
-    .message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
-    .message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
-    /* margin-bottom을 제거하여 (.message-row가 align-items: flex-end 이므로)
-       타임스탬프의 밑변이 말풍선(.message-bubble)의 밑변과 정확히 일치하도록 함 */
-    .timestamp { font-size: 10px; color: #949ba4; white-space: nowrap; flex-shrink: 0; }
+.message-bubble .edited-tag { font-size: 10px; opacity: 0.65; margin-left: 4px; font-style: italic; display: inline-block; }
+.message-row.mine .message-bubble { background-color: #5865f2; color: white; border-bottom-right-radius: 2px; }
+.message-row.other .message-bubble { background-color: #2b2d31; color: #dbdee1; border-bottom-left-radius: 2px; }
+/* margin-bottom을 제거하여 (.message-row가 align-items: flex-end 이므로)
+      타임스탬프의 밑변이 말풍선(.message-bubble)의 밑변과 정확히 일치하도록 함 */
+.timestamp { font-size: 10px; color: #949ba4; white-space: nowrap; flex-shrink: 0; }
 
-    /* 우클릭 삭제 & 삭제된 메시지 디자인 */
-    .message-bubble.deleted {
-      background-color: rgba(255, 255, 255, 0.03) !important; color: #949ba4 !important; font-style: italic;
-      border: 1px solid #3f4147; display: flex; align-items: center; gap: 6px; box-shadow: none;
-    }
-    #context-menu {
-      display: none; position: fixed; z-index: 1000; background-color: #2b2d31;
-      border: 1px solid #1e1f22; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); padding: 4px; min-width: 130px;
-    }
-    .context-menu-item {
-      padding: 8px 12px; color: #f23f43; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 4px; transition: background-color 0.15s ease;
-    }
-    .context-menu-item:hover { background-color: #da373c; color: #ffffff; }
-    .context-menu-item.context-menu-item-edit { color: #dbdee1; }
-    .context-menu-item.context-menu-item-edit:hover { background-color: #35373c; color: #ffffff; }
+/* 우클릭 삭제 & 삭제된 메시지 디자인 */
+.message-bubble.deleted {
+background-color: rgba(255, 255, 255, 0.03) !important; color: #949ba4 !important; font-style: italic;
+border: 1px solid #3f4147; display: flex; align-items: center; gap: 6px; box-shadow: none;
+}
+#context-menu {
+display: none; position: fixed; z-index: 1000; background-color: #2b2d31;
+border: 1px solid #1e1f22; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); padding: 4px; min-width: 130px;
+}
+.context-menu-item {
+padding: 8px 12px; color: #f23f43; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 4px; transition: background-color 0.15s ease;
+}
+.context-menu-item:hover { background-color: #da373c; color: #ffffff; }
+.context-menu-item.context-menu-item-edit { color: #dbdee1; }
+.context-menu-item.context-menu-item-edit:hover { background-color: #35373c; color: #ffffff; }
 
-    /* 메시지 인라인 수정 UI */
-    .message-edit-box { display: flex; flex-direction: column; gap: 6px; }
-    .message-edit-box textarea {
-      background-color: #1e1f22; border: 1px solid #5865f2; border-radius: 6px; color: #dbdee1;
-      font-size: 14px; font-family: inherit; padding: 8px 10px; resize: none; outline: none; line-height: 1.4;
-      text-align: left; box-sizing: border-box;
-      /* 말풍선(.message-bubble)과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준
-         폭을 사용해 수정 UI도 같은 지점에서 줄바꿈되도록 함. ch 단위는 폰트의
-         평균 문자 너비를 기준으로 하므로 30자 폭과 비슷하게 맞춰짐. min()으로
-         부모 컨테이너 폭을 넘지 않도록 안전장치를 둠(우측 벽 오버플로우 방지). */
-      width: min(30ch, 100%);
-    }
-    .message-edit-actions { display: flex; gap: 8px; font-size: 12px; color: #949ba4; }
-    .message-edit-actions button {
-      background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; padding: 2px 4px;
-    }
-    .message-edit-save { color: #23a55a; }
-    .message-edit-save:hover { text-decoration: underline; }
-    .message-edit-cancel { color: #949ba4; }
-    .message-edit-cancel:hover { text-decoration: underline; }
+/* 메시지 인라인 수정 UI */
+.message-edit-box { display: flex; flex-direction: column; gap: 6px; }
+.message-edit-box textarea {
+background-color: #1e1f22; border: 1px solid #5865f2; border-radius: 6px; color: #dbdee1;
+font-size: 14px; font-family: inherit; padding: 8px 10px; resize: none; outline: none; line-height: 1.4;
+text-align: left; box-sizing: border-box;
+/* 말풍선(.message-bubble)과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준
+        폭을 사용해 수정 UI도 같은 지점에서 줄바꿈되도록 함. ch 단위는 폰트의
+        평균 문자 너비를 기준으로 하므로 30자 폭과 비슷하게 맞춰짐. min()으로
+        부모 컨테이너 폭을 넘지 않도록 안전장치를 둠(우측 벽 오버플로우 방지). */
+width: min(30ch, 100%);
+}
+.message-edit-actions { display: flex; gap: 8px; font-size: 12px; color: #949ba4; }
+.message-edit-actions button {
+background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; padding: 2px 4px;
+}
+.message-edit-save { color: #23a55a; }
+.message-edit-save:hover { text-decoration: underline; }
+.message-edit-cancel { color: #949ba4; }
+.message-edit-cancel:hover { text-decoration: underline; }
 
-    /* 답장 관련 스타일 */
-    .message-hover-actions {
-      position: absolute; top: -8px; display: none; background-color: #2b2d31; border: 1px solid #1e1f22;
-      border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
-    }
-    .message-row.other .message-hover-actions { right: -30px; }
-    .message-row.mine .message-hover-actions { left: -30px; }
-    .message-row:hover .message-hover-actions { display: flex; }
-    
-    .action-btn {
-      background: none; border: none; color: #949ba4; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
-    }
-    .action-btn:hover { background-color: #35373c; color: #dbdee1; }
+/* 답장 관련 스타일 */
+.message-hover-actions {
+position: absolute; top: -8px; display: none; background-color: #2b2d31; border: 1px solid #1e1f22;
+border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
+}
+.message-row.other .message-hover-actions { right: -30px; }
+.message-row.mine .message-hover-actions { left: -30px; }
+.message-row:hover .message-hover-actions { display: flex; }
 
-    .reply-quote {
-      font-size: 12px; color: #949ba4; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
-    }
-    /* 답장 화살표(↪)가 유니코드 특수문자라 브라우저/폰트에 따라 렌더링 높이가
-       본문 텍스트보다 훨씬 크게 잡히고, font-weight: bold까지 겹쳐 옆의
-       "@닉네임" 텍스트와 간격이 거의 없어 하나의 도형처럼 붙어 보이는
-       문제가 있었음. 화살표를 별도 인라인 요소로 분리해 닉네임 표시
-       글자(.message-header, 12px)보다도 훨씬 작은 크기(9px)로 줄이고,
-       font-weight도 normal로 낮추고, 좌우 여백(margin)을 명시적으로 두어
-       뒤따르는 텍스트와 시각적으로 확실히 분리되도록 함. */
-    .reply-quote::before {
-      content: "↪";
-      font-weight: normal;
-      font-size: 9px;
-      line-height: 1;
-      color: #949ba4;
-      flex-shrink: 0;
-    }
-    .reply-quote-author { font-weight: 600; color: #dbdee1; margin-left: 2px; }
-    .reply-quote-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+.action-btn {
+background: none; border: none; color: #949ba4; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+}
+.action-btn:hover { background-color: #35373c; color: #dbdee1; }
 
-    #reply-preview-bar {
-      display: none; background-color: #2b2d31; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px;
-      border-left: 3px solid #5865f2; align-items: center; justify-content: space-between; font-size: 13px; color: #949ba4;
-      margin-bottom: -8px;
-    }
-    #reply-preview-bar.active { display: flex; }
-    .reply-preview-info { display: flex; align-items: center; gap: 6px; overflow: hidden; }
-    .reply-preview-target { color: #f2f3f5; font-weight: 600; }
-    .reply-preview-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
-    .cancel-reply-btn { background: none; border: none; color: #949ba4; cursor: pointer; border-radius: 50%; padding: 2px 6px; }
-    .cancel-reply-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.1); }
+.reply-quote {
+font-size: 12px; color: #949ba4; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+}
+.reply-quote::before { content: "↪"; font-weight: bold; color: #949ba4; }
+.reply-quote-author { font-weight: 600; color: #dbdee1; }
+.reply-quote-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
 
-    /* 입력창 영역 */
-    .chat-input-area { padding: 0 16px 24px 16px; }
-    .chat-input-wrapper {
-      background-color: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center;
-    }
-    .chat-input-wrapper input { flex: 1; background: none; border: none; color: #dbdee1; font-size: 14px; outline: none; }
-    #send-btn {
-      background: none; border: none; cursor: pointer; color: #b5bac1; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; flex-shrink: 0;
-    }
-    #send-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.08); }
-    #send-btn svg { width: 18px; height: 18px; fill: currentColor; }
+#reply-preview-bar {
+display: none; background-color: #2b2d31; padding: 8px 12px; border-top-left-radius: 8px; border-top-right-radius: 8px;
+border-left: 3px solid #5865f2; align-items: center; justify-content: space-between; font-size: 13px; color: #949ba4;
+margin-bottom: -8px;
+}
+#reply-preview-bar.active { display: flex; }
+.reply-preview-info { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.reply-preview-target { color: #f2f3f5; font-weight: 600; }
+.reply-preview-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.cancel-reply-btn { background: none; border: none; color: #949ba4; cursor: pointer; border-radius: 50%; padding: 2px 6px; }
+.cancel-reply-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.1); }
 
-    /* 설정 모달 */
-    #settings-modal {
-      display: flex; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
-    }
-    #settings-modal.show { opacity: 1; pointer-events: auto; }
-    .modal-content {
-      background-color: #313338; width: 550px; border-radius: 8px; padding: 32px;
-      display: flex; flex-direction: column; gap: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.6); position: relative;
-    }
-    .modal-header { color: #f2f3f5; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
-    .modal-close-btn {
-      position: absolute; top: 20px; right: 20px; background: none; border: none;
-      color: #949ba4; font-size: 24px; cursor: pointer; width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center; border-radius: 50%;
-    }
-    .modal-close-btn:hover { color: #f2f3f5; background-color: rgba(255,255,255,0.05); }
-    
-    .settings-group { display: flex; flex-direction: column; gap: 10px; }
-    .settings-group label { font-size: 13px; font-weight: bold; color: #b5bac1; text-transform: uppercase; }
-    .settings-group input {
-      padding: 12px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 15px; outline: none;
-    }
-    .file-upload-label {
-      display: inline-block; padding: 14px; background-color: #2b2d31; border: 1px solid #3f444b;
-      border-radius: 4px; text-align: center; color: #dbdee1; cursor: pointer; font-size: 14px; outline: none;
-    }
-    .file-upload-label:hover { background-color: #35373c; border-color: #5865f2; }
-    
-    .settings-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
-    .btn-save { background-color: #5865f2; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-    .btn-save:hover { background-color: #4752c4; }
-    .btn-logout-modal { background-color: #ed4245; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
- /* =========================================
-   답장(Reply) 메시지 프리뷰/말풍선 스타일
-   ========================================= */
+/* 입력창 영역 */
+.chat-input-area { padding: 0 16px 24px 16px; }
+.chat-input-wrapper {
+background-color: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center;
+}
+.chat-input-wrapper input { flex: 1; background: none; border: none; color: #dbdee1; font-size: 14px; outline: none; }
+#send-btn {
+background: none; border: none; cursor: pointer; color: #b5bac1; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; flex-shrink: 0;
+}
+#send-btn:hover { color: #f2f3f5; background-color: rgba(255, 255, 255, 0.08); }
+#send-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* 설정 모달 */
+#settings-modal {
+display: flex; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
+}
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.modal-content {
+background-color: #313338; width: 550px; border-radius: 8px; padding: 32px;
+display: flex; flex-direction: column; gap: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.6); position: relative;
+}
+.modal-header { color: #f2f3f5; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+.modal-close-btn {
+position: absolute; top: 20px; right: 20px; background: none; border: none;
+color: #949ba4; font-size: 24px; cursor: pointer; width: 36px; height: 36px;
+display: flex; align-items: center; justify-content: center; border-radius: 50%;
+}
+.modal-close-btn:hover { color: #f2f3f5; background-color: rgba(255,255,255,0.05); }
+
+.settings-group { display: flex; flex-direction: column; gap: 10px; }
+.settings-group label { font-size: 13px; font-weight: bold; color: #b5bac1; text-transform: uppercase; }
+.settings-group input {
+padding: 12px; border-radius: 4px; border: 1px solid #1e1f22; background-color: #1e1f22; color: #dbdee1; font-size: 15px; outline: none;
+}
+.file-upload-label {
+display: inline-block; padding: 14px; background-color: #2b2d31; border: 1px solid #3f444b;
+border-radius: 4px; text-align: center; color: #dbdee1; cursor: pointer; font-size: 14px; outline: none;
+}
+.file-upload-label:hover { background-color: #35373c; border-color: #5865f2; }
+
+.settings-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+.btn-save { background-color: #5865f2; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+.btn-save:hover { background-color: #4752c4; }
+.btn-logout-modal { background-color: #ed4245; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+/* =========================================
+  답장(Reply) 메시지 프리뷰/말풍선 스타일
+  ========================================= */
 
 /* 메시지 내부의 답장 참조 영역 */
 .message-reply-preview, 
 .reply-reference {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap; /* 줄바꿈 방지 */
-  font-size: 12px;
-  color: #b5bac1;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-left: 3px solid #5865f2;
-  padding: 4px 8px;
-  margin-bottom: 6px;
-  border-radius: 4px;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-  cursor: pointer;
+display: flex;
+align-items: center;
+flex-wrap: nowrap; /* 줄바꿈 방지 */
+font-size: 12px;
+color: #b5bac1;
+background-color: rgba(255, 255, 255, 0.05);
+border-left: 3px solid #5865f2;
+padding: 4px 8px;
+margin-bottom: 6px;
+border-radius: 4px;
+max-width: 100%;
+overflow: hidden;
+white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+cursor: pointer;
 }
 
 .message-reply-preview:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+background-color: rgba(255, 255, 255, 0.08);
 }
 
 /* 답장 아이콘 (꺾쇠 화살표) */
 .message-reply-preview i,
 .reply-reference i {
-  margin-right: 6px;
-  color: #949ba4;
-  font-size: 11px;
+margin-right: 6px;
+color: #949ba4;
+font-size: 11px;
 }
 
 /* 답장 대상자 이름 */
 .reply-author {
-  font-weight: 600;
-  color: #f2f3f5;
-  margin-right: 6px;
-  flex-shrink: 0;
+font-weight: 600;
+color: #f2f3f5;
+margin-right: 6px;
+flex-shrink: 0;
 }
 
 /* 답장 내용 텍스트 (말줄임표 처리) */
 .reply-content-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #dbdee1;
-  min-width: 0; /* Flexbox 안에서 텍스트 축소 및 말줄임표가 정상 작동하도록 함 */
-  flex: 1;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+color: #dbdee1;
+min-width: 0; /* Flexbox 안에서 텍스트 축소 및 말줄임표가 정상 작동하도록 함 */
+flex: 1;
 }
 
 /* 입력창 상단에 표시되는 '답장 작성 중' 바 스타일 */
 #replying-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #2b2d31;
-  padding: 6px 12px;
-  font-size: 13px;
-  color: #dbdee1;
-  border-top: 1px solid #1f2023;
+display: flex;
+align-items: center;
+justify-content: space-between;
+background-color: #2b2d31;
+padding: 6px 12px;
+font-size: 13px;
+color: #dbdee1;
+border-top: 1px solid #1f2023;
 }
 
 #replying-bar .cancel-reply-btn {
-  background: none;
-  border: none;
-  color: #949ba4;
-  cursor: pointer;
-  font-size: 14px;
+background: none;
+border: none;
+color: #949ba4;
+cursor: pointer;
+font-size: 14px;
 }
 
 #replying-bar .cancel-reply-btn:hover {
-  color: #f2f3f5;
+color: #f2f3f5;
 }
-
-/* =========================================
-   읽지 않은 메시지 표시 (디스코드 스타일)
-   ========================================= */
-
-/* 화면 상단 고정 안내 바: "오후 HH:MM 이후로 읽지 않은 메시지가 N개 있어요" */
-#unread-banner {
-  display: none;
-  padding: 8px 16px;
-  background-color: #5865f2;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  user-select: none;
-}
-#unread-banner.active { display: block; }
-#unread-banner:hover { background-color: #4752c4; }
-#unread-banner b { font-weight: 700; }
-
-/* 메시지 목록 안에서 안 읽은 첫 메시지 위에 표시되는 "신규" 구분선
-   - 얇은 빨간 선이 우측 끝까지 이어지다가, "신규" 배지 좌측의 뾰족한
-     화살표(꼬리) 끝점에서 정확히 맞닿아 끊기는 리본 형태 디자인.
-   - [버그 수정] 화살표(꼬리) 삼각형이 기존에는 top: 0 으로 배지의
-     "위쪽 끝"에 고정되어 있었음. 하지만 삼각형 자체의 높이(border-top
-     12px + border-bottom 12px = 24px)가 배지의 실제 높이(약 28px)보다
-     작아서, top:0 기준으로는 삼각형이 배지보다 위로 약 2px 짧게 끝나
-     삼각형 뾰족한 끝점이 구분선(가로줄)과 정확히 맞닿지 않고 살짝
-     어긋나 보이는 문제가 있었음.
-     => top: 50% + transform: translateY(-50%) 로 배지의 실제 높이와
-        무관하게 항상 배지의 "세로 중앙"에 삼각형이 오도록 수정하여,
-        가로줄(구분선)과 삼각형 끝점이 항상 정확히 일치하게 함.
-   - [추가 축소] 화살표(꼬리) 삼각형이 border-top/bottom 10px씩(세로
-     20px)으로 배지 높이(약 20px)와 거의 같아, 화살표가 별개의
-     "포인터"로 보이지 않고 배지와 하나로 뭉개진 도형처럼 붙어 보이는
-     문제가 있었음. 삼각형 크기를 절반(5px)까지 대폭 축소하여
-     닉네임 표시 글자 크기(.message-header, 12px)와 비슷한 스케일로
-     맞추고, 그에 맞춰 배지의 padding/margin/border-radius도 함께
-     줄여 화살표가 배지 옆에 작고 또렷한 "꼬리"로 보이도록 조정. */
-.new-messages-divider {
-  display: flex;
-  align-items: center;
-  margin: 6px 0 12px 0;
-}
-.new-messages-divider::before {
-  content: '';
-  flex: 1;
-  height: 2px;
-  background-color: #a12d38;
-}
-.new-messages-badge {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  background-color: #e0323c;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  padding: 3px 10px 3px 7px;
-  white-space: nowrap;
-  /* 좌측은 각지게, 우측은 필(pill) 형태로 둥글게 */
-  border-radius: 0 8px 8px 0;
-  /* 좌측 화살표(꼬리) 삼각형이 들어갈 공간 확보 (삼각형 너비와 동일) */
-  margin-left: 5px;
-}
-/* 배지 좌측의 뾰족한 화살표(꼬리) 부분: border trick으로 좌측을 향한
-   삼각형을 만들어 구분선과 배지가 하나로 이어지는 리본 모양을 구현.
-   top: 50% + translateY(-50%)로 배지의 세로 중앙에 정확히 위치시켜
-   구분선(가로줄)과 삼각형 끝점이 항상 일치하도록 함.
-   삼각형 크기(5px)를 닉네임 글자 크기(12px) 수준으로 대폭 축소하여
-   배지 본체와 뭉개져 보이지 않고 작은 화살표로 또렷하게 구분되도록 함. */
-.new-messages-badge::before {
-  content: '';
-  position: absolute;
-  left: -5px;
-  top: 50%;
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-right: 5px solid #e0323c;
-  transform: translateY(-50%);
-}
- </style>
+</style>
 </head>
 <body>
 
-  <div id="context-menu">
-    <div class="context-menu-item context-menu-item-edit" id="edit-btn">
-      <span>✏️</span> 메시지 수정
-    </div>
-    <div class="context-menu-item" id="delete-btn">
-      <span>🗑️</span> 메시지 삭제
-    </div>
-  </div>
+<div id="context-menu">
+<div class="context-menu-item context-menu-item-edit" id="edit-btn">
+<span>✏️</span> 메시지 수정
+</div>
+<div class="context-menu-item" id="delete-btn">
+<span>🗑️</span> 메시지 삭제
+</div>
+</div>
 
-  <div id="auth-container">
-    <div class="auth-box">
-      <h2 id="auth-title">로그인</h2>
-      <input type="email" id="email-input" placeholder="이메일">
-      <input type="password" id="password-input" placeholder="비밀번호">
-      <input type="text" id="nickname-input" placeholder="닉네임" style="display: none;">
-      <button id="auth-action-btn">로그인</button>
-      <div id="toggle-mode-btn" class="toggle-link-text">계정이 없으신가요? 회원가입</div>
-    </div>
-  </div>
+<div id="auth-container">
+<div class="auth-box">
+<h2 id="auth-title">로그인</h2>
+<input type="email" id="email-input" placeholder="이메일">
+<input type="password" id="password-input" placeholder="비밀번호">
+<input type="text" id="nickname-input" placeholder="닉네임" style="display: none;">
+<button id="auth-action-btn">로그인</button>
+<div id="toggle-mode-btn" class="toggle-link-text">계정이 없으신가요? 회원가입</div>
+</div>
+</div>
 
-  <div id="settings-modal">
-    <div class="modal-content">
-      <button class="modal-close-btn" id="close-settings-btn">×</button>
-      <div class="modal-header">사용자 설정</div>
-      <div class="settings-group">
-        <label>프로필 사진 변경</label>
-        <label class="file-upload-label" for="setting-file-input">
-          <span id="file-label-text">컴퓨터에서 이미지 선택...</span>
-        </label>
-        <input type="file" id="setting-file-input" accept="image/*" style="display:none;">
-      </div>
-      <div class="settings-group">
-        <label>닉네임</label>
-        <input type="text" id="setting-nickname-input" placeholder="새 닉네임 입력">
-      </div>
-      <div class="settings-group">
-        <label>새 비밀번호 (변경시에만 입력)</label>
-        <input type="password" id="setting-password-input" placeholder="변경할 비밀번호">
-      </div>
-      <div class="settings-buttons">
-        <button class="btn-logout-modal" id="modal-logout-btn">로그아웃</button>
-        <button class="btn-save" id="save-settings-btn">저장</button>
-      </div>
-    </div>
-  </div>
+<div id="settings-modal">
+<div class="modal-content">
+<button class="modal-close-btn" id="close-settings-btn">×</button>
+<div class="modal-header">사용자 설정</div>
+<div class="settings-group">
+<label>프로필 사진 변경</label>
+<label class="file-upload-label" for="setting-file-input">
+<span id="file-label-text">컴퓨터에서 이미지 선택...</span>
+</label>
+<input type="file" id="setting-file-input" accept="image/*" style="display:none;">
+</div>
+<div class="settings-group">
+<label>닉네임</label>
+<input type="text" id="setting-nickname-input" placeholder="새 닉네임 입력">
+</div>
+<div class="settings-group">
+<label>새 비밀번호 (변경시에만 입력)</label>
+<input type="password" id="setting-password-input" placeholder="변경할 비밀번호">
+</div>
+<div class="settings-buttons">
+<button class="btn-logout-modal" id="modal-logout-btn">로그아웃</button>
+<button class="btn-save" id="save-settings-btn">저장</button>
+</div>
+</div>
+</div>
 
-  <div id="app-container">
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">Lilac</div>
-      <div class="channel-list">
-        <div class="channel-item active" data-channel="general"># general</div>
-        <div class="channel-item" data-channel="random"># random</div>
-      </div>
-      <div class="user-panel">
-        <div class="user-profile-info">
-          <div class="user-avatar-small" id="sidebar-avatar">U</div>
-          <div class="user-name-tag">
-            <div class="user-display-name" id="sidebar-nickname">유저</div>
-            <div class="user-status">온라인</div>
-          </div>
-        </div>
-        <button class="settings-icon-btn" id="open-settings-btn" title="사용자 설정">
-          <img src="setting-icon.png" alt="설정" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAPUlEQVR42mNkYBhwIIBq/Ifw/tP4/8EQZxi1YNQCUZk1aoGoBqMWjMJiP2qBqGjUglG7gEELyDVM9K8FAwCH+E5L8H7/wwAAAABJRU5ErkJggg=='">
-        </button>
-      </div>
-      <div class="sidebar-resizer" id="sidebar-resizer"></div>
-    </div>
+<div id="app-container">
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">Lilac</div>
+<div class="channel-list">
+<div class="channel-item active" data-channel="general"># general</div>
+<div class="channel-item" data-channel="random"># random</div>
+</div>
+<div class="user-panel">
+<div class="user-profile-info">
+<div class="user-avatar-small" id="sidebar-avatar">U</div>
+<div class="user-name-tag">
+<div class="user-display-name" id="sidebar-nickname">유저</div>
+<div class="user-status">온라인</div>
+</div>
+</div>
+<button class="settings-icon-btn" id="open-settings-btn" title="사용자 설정">
+<img src="setting-icon.png" alt="설정" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAPUlEQVR42mNkYBhwIIBq/Ifw/tP4/8EQZxi1YNQCUZk1aoGoBqMWjMJiP2qBqGjUglG7gEELyDVM9K8FAwCH+E5L8H7/wwAAAABJRU5ErkJggg=='">
+</button>
+</div>
+<div class="sidebar-resizer" id="sidebar-resizer"></div>
+</div>
 
-    <div class="chat-area">
-      <div class="chat-main">
-        <div class="chat-header" id="current-channel-title"># general</div>
-        <div id="unread-banner"></div>
-        <div id="messages"></div>
-        
-        <div class="chat-input-area">
-          <div id="reply-preview-bar">
-            <div class="reply-preview-info">
-              <i class="fa-solid fa-reply"></i>
-              <span class="reply-preview-target" id="reply-target-name">@유저</span>님에게 답장 남기는 중:
-              <span class="reply-preview-text" id="reply-target-text">메시지 내용</span>
-            </div>
-            <button class="cancel-reply-btn" id="cancel-reply-btn" title="답장 취소">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
+<div class="chat-area">
+<div class="chat-main">
+<div class="chat-header" id="current-channel-title"># general</div>
+<div id="messages"></div>
 
-          <form id="message-form" class="chat-input-wrapper">
-            <input type="text" id="message-input" autocomplete="off" placeholder="#general에 메시지 보내기" maxlength="5000">
-            <button type="submit" id="send-btn" title="전송">
-              <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="chat-input-area">
+<div id="reply-preview-bar">
+<div class="reply-preview-info">
+<i class="fa-solid fa-reply"></i>
+<span class="reply-preview-target" id="reply-target-name">@유저</span>님에게 답장 남기는 중:
+<span class="reply-preview-text" id="reply-target-text">메시지 내용</span>
+</div>
+<button class="cancel-reply-btn" id="cancel-reply-btn" title="답장 취소">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<form id="message-form" class="chat-input-wrapper">
+<input type="text" id="message-input" autocomplete="off" placeholder="#general에 메시지 보내기" maxlength="5000">
+<button type="submit" id="send-btn" title="전송">
+<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+</button>
+</form>
+</div>
+</div>
+</div>
+</div>
 
-    // ⚠️ 본인의 실제 Firebase Config 키값으로 꼭 수정하세요!
-    const firebaseConfig = {
-  apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
-  authDomain: "lilac-13935.firebaseapp.com",
-  projectId: "lilac-13935",
-  storageBucket: "lilac-13935.firebasestorage.app",
-  messagingSenderId: "485552650048",
-  appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
-  measurementId: "G-81H89P6F6E"
+<script src="/socket.io/socket.io.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ⚠️ 본인의 실제 Firebase Config 키값으로 꼭 수정하세요!
+const firebaseConfig = {
+apiKey: "AIzaSyDRGQYScMifqnzBGvN8UfVx_mmHJL4MhPg",
+authDomain: "lilac-13935.firebaseapp.com",
+projectId: "lilac-13935",
+storageBucket: "lilac-13935.firebasestorage.app",
+messagingSenderId: "485552650048",
+appId: "1:485552650048:web:d05c5dd6ce989765a5aca5",
+measurementId: "G-81H89P6F6E"
 };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const socket = io({ transports: ['websocket'] });
-
-    let isLoginMode = true;
-    let currentUser = null;
-    let selectedImageBase64 = null;
-    
-    let currentChannel = 'general';
-    const randomChannelNum = String(Math.floor(Math.random() * 999) + 1);
-
-    // 렌더링용 변수
-    let messageHistoryCache = [];
-    let lastDateStr = null;
-    let lastSenderId = null;
-    let lastMinuteStr = null;
-    let lastTimeElem = null;
-
-    // 답장 관리용 변수
-    let replyTarget = null;
-    let selectedMessageId = null;
-
-    // 안 읽은 메시지 수 관리 (타인 메시지 기준)
-    let unreadCount = 0;
-    window.addEventListener('focus', () => {
-      unreadCount = 0;
-      document.title = "Chat";
-    });
-
-    // 채널별 "읽지 않은 메시지" 표시 (디스코드 스타일) 관리용 변수
-    // lastReadTimestamps: { [channel]: timestamp } - 채널별로 사용자가 마지막으로 읽은 시각
-    let lastReadTimestamps = {};
-    // 현재 채널에 표시 중인 "읽지 않은 메시지" 정보 (없으면 null)
-    // { count: 개수, firstUnreadId: 신규 구분선을 표시할 첫 메시지 id, sinceTs: 안내 문구용 마지막 읽은 시각(ms) }
-    let unreadInfo = null;
-    // 채널을 새로 불러온 직후, 스크롤을 맨 아래가 아니라 "신규" 구분선 위치로
-    // 이동시켜야 하는지 여부를 나타내는 플래그 (redrawMessages()가 참조함)
-    let pendingScrollToUnread = false;
-
-    // DOM 요소
-    const authContainer = document.getElementById('auth-container');
-    const appContainer = document.getElementById('app-container');
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('message-input');
-    const unreadBanner = document.getElementById('unread-banner');
-
-    const replyPreviewBar = document.getElementById('reply-preview-bar');
-    const replyTargetName = document.getElementById('reply-target-name');
-    const replyTargetText = document.getElementById('reply-target-text');
-    const cancelReplyBtn = document.getElementById('cancel-reply-btn');
-    const contextMenu = document.getElementById('context-menu');
-    const editBtn = document.getElementById('edit-btn');
-
-    // --- 사이드바 드래그 리사이저 ---
-    const sidebar = document.getElementById('sidebar');
-    const resizer = document.getElementById('sidebar-resizer');
-    let isResizing = false;
-    let rafId = null;
-
-    resizer.addEventListener('mousedown', (e) => {
-      isResizing = true;
-      resizer.classList.add('resizing');
-      document.body.style.cursor = 'ew-resize';
-      e.preventDefault();
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const newWidth = e.clientX;
-        if (newWidth >= 180 && newWidth <= 400) {
-          sidebar.style.flex = "none";
-          sidebar.style.width = newWidth + 'px';
-        }
-      });
-    });
-    window.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
-        resizer.classList.remove('resizing');
-        document.body.style.cursor = 'default';
-      }
-    });
-
-    // --- 인증 (로그인/회원가입) ---
-    document.getElementById('toggle-mode-btn').addEventListener('click', () => {
-      isLoginMode = !isLoginMode;
-      document.getElementById('auth-title').innerText = isLoginMode ? "로그인" : "회원가입";
-      document.getElementById('auth-action-btn').innerText = isLoginMode ? "로그인" : "회원가입 완료";
-      document.getElementById('toggle-mode-btn').innerText = isLoginMode ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인";
-      document.getElementById('nickname-input').style.display = isLoginMode ? "none" : "block";
-    });
-
-    document.getElementById('auth-action-btn').addEventListener('click', async () => {
-      const email = document.getElementById('email-input').value.trim();
-      const pw = document.getElementById('password-input').value.trim();
-      const nick = document.getElementById('nickname-input').value.trim();
-      
-      if (!email || !pw || (!isLoginMode && !nick)) return alert('모든 필드를 입력해주세요.');
-      try {
-        if (isLoginMode) {
-          await signInWithEmailAndPassword(auth, email, pw);
-        } else {
-          const cred = await createUserWithEmailAndPassword(auth, email, pw);
-          await updateProfile(cred.user, { displayName: nick });
-          await setDoc(doc(db, "users", cred.user.uid), { displayName: nick, photoURL: null });
-          await auth.currentUser.reload();
-          alert('가입 완료!');
-        }
-      } catch (e) { alert('오류: ' + e.message); }
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) currentUser.customData = userDoc.data();
-          else currentUser.customData = { displayName: user.displayName, photoURL: user.photoURL };
-        } catch (e) { currentUser.customData = {}; }
-        
-        authContainer.style.display = 'none';
-        appContainer.style.display = 'flex';
-        updateUserUI(currentUser);
-        loadLastReadTimestamps();
-        loadChannelHistory(currentChannel);
-      } else {
-        currentUser = null;
-        appContainer.style.display = 'none';
-        authContainer.style.display = 'flex';
-        messagesDiv.innerHTML = '';
-      }
-    });
-
-    function updateUserUI(user) {
-      const nameElem = document.getElementById('sidebar-nickname');
-      const avatarElem = document.getElementById('sidebar-avatar');
-      const name = user.customData?.displayName || user.displayName || '익명';
-      const photo = user.customData?.photoURL || user.photoURL;
-
-      nameElem.innerText = name;
-      if (photo) {
-        avatarElem.innerHTML = `<img src="${photo}" alt="profile">`;
-      } else {
-        avatarElem.innerHTML = (name ? name[0] : '유').toUpperCase();
-      }
-    }
-
-    // --- 설정 모달 ---
-    const settingsModal = document.getElementById('settings-modal');
-    const openSettingsBtn = document.getElementById('open-settings-btn');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
-    const saveSettingsBtn = document.getElementById('save-settings-btn');
-    const modalLogoutBtn = document.getElementById('modal-logout-btn');
-    const fileInput = document.getElementById('setting-file-input');
-    const fileLabelText = document.getElementById('file-label-text');
-
-    openSettingsBtn.addEventListener('click', () => {
-      if (!currentUser) return;
-      document.getElementById('setting-nickname-input').value = currentUser.customData?.displayName || currentUser.displayName || '';
-      document.getElementById('setting-password-input').value = '';
-      const hasPhoto = currentUser.customData?.photoURL || currentUser.photoURL;
-      fileLabelText.innerText = hasPhoto ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택...";
-      selectedImageBase64 = hasPhoto || null;
-      settingsModal.classList.add('show');
-    });
-
-    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
-    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('show'); });
-
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      fileLabelText.innerText = file.name;
-      const reader = new FileReader();
-      reader.onload = (upEvent) => { selectedImageBase64 = upEvent.target.result; };
-      reader.readAsDataURL(file);
-    });
-
-    saveSettingsBtn.addEventListener('click', async () => {
-      const newNick = document.getElementById('setting-nickname-input').value.trim();
-      const newPassword = document.getElementById('setting-password-input').value.trim();
-      try {
-        const updateData = {};
-        if (newNick) updateData.displayName = newNick;
-        if (selectedImageBase64 !== undefined) updateData.photoURL = selectedImageBase64;
-
-        if (Object.keys(updateData).length > 0) {
-          await updateProfile(auth.currentUser, { displayName: newNick || auth.currentUser.displayName });
-          await setDoc(doc(db, "users", auth.currentUser.uid), updateData, { merge: true });
-          currentUser.customData = updateData;
-        }
-        if (newPassword) await updatePassword(auth.currentUser, newPassword);
-        await auth.currentUser.reload();
-        updateUserUI(currentUser);
-        alert('변경사항이 저장되었습니다.');
-        settingsModal.classList.remove('show');
-      } catch (e) { alert('변경사항 저장 실패: ' + e.message); }
-    });
-
-    modalLogoutBtn.addEventListener('click', () => { settingsModal.classList.remove('show'); signOut(auth); });
-
-    // --- 채널 변경 ---
-    document.querySelectorAll('.channel-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        currentChannel = item.getAttribute('data-channel');
-        document.getElementById('current-channel-title').innerText = `# ${currentChannel}`;
-        messageInput.placeholder = `#${currentChannel}에 메시지 보내기`;
-        clearReplyTarget();
-        loadChannelHistory(currentChannel);
-      });
-    });
-
-    // --- 답장 상태 제어 ---
-    function setReplyTarget(msgData) {
-      if (!msgData || msgData.isDeleted) return;
-      replyTarget = {
-        id: msgData.id,
-        author: msgData.nickname || '알 수 없음',
-        content: msgData.text
-      };
-      replyTargetName.textContent = `@${replyTarget.author}`;
-      replyTargetText.textContent = replyTarget.content;
-      replyPreviewBar.classList.add('active');
-      messageInput.focus();
-    }
-
-    function clearReplyTarget() {
-      replyTarget = null;
-      replyPreviewBar.classList.remove('active');
-    }
-
-    cancelReplyBtn.addEventListener('click', clearReplyTarget);
-
-    // --- 읽지 않은 메시지 (디스코드 스타일) 관리 ---
-
-    // localStorage에 채널별 마지막 읽은 시각을 저장/복원 (로그인 유저 uid별로 구분)
-    function getReadStateStorageKey() {
-      return `lilac_last_read_${currentUser ? currentUser.uid : 'anon'}`;
-    }
-    function loadLastReadTimestamps() {
-      try {
-        const raw = localStorage.getItem(getReadStateStorageKey());
-        lastReadTimestamps = raw ? JSON.parse(raw) : {};
-      } catch (e) { lastReadTimestamps = {}; }
-    }
-    function saveLastReadTimestamps() {
-      try {
-        localStorage.setItem(getReadStateStorageKey(), JSON.stringify(lastReadTimestamps));
-      } catch (e) { /* 저장 실패는 무시 (예: 시크릿 모드 등) */ }
-    }
-
-    // 오후 HH:MM 형식으로 타임스탬프(ms)를 변환 (안내 배너 문구용)
-    function formatTimeForBanner(ts) {
-      const d = new Date(ts);
-      let hours = d.getHours();
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      const ampm = hours >= 12 ? '오후' : '오전';
-      hours = hours % 12 || 12;
-      return `${ampm} ${hours}:${minutes}`;
-    }
-
-    // 현재 채널 메시지 캐시를 기준으로, 마지막으로 읽은 시각 이후에 "타인이 보낸"
-    // 메시지가 있는지 계산하여 unreadInfo를 갱신함. 채널 전환/최초 로드 시에만 호출.
-    function computeUnreadInfo(channel) {
-      // 이 채널에 한 번도 들어온 적이 없다면(저장된 읽음 기록이 없다면),
-      // 과거 전체 히스토리를 "안 읽은 메시지"로 표시하지 않고 바로 읽음 처리함
-      // (디스코드도 채널에 처음 들어가면 안 읽은 표시를 과거 전체에 걸지 않음).
-      const hasReadBefore = Object.prototype.hasOwnProperty.call(lastReadTimestamps, channel);
-      if (!hasReadBefore) {
-        lastReadTimestamps[channel] = Date.now();
-        saveLastReadTimestamps();
-        unreadInfo = null;
-        return;
-      }
-
-      const lastRead = lastReadTimestamps[channel];
-      const unreadMsgs = messageHistoryCache.filter(
-        (m) => (m.timestamp || 0) > lastRead && currentUser && m.uid !== currentUser.uid
-      );
-      if (unreadMsgs.length === 0) {
-        unreadInfo = null;
-        return;
-      }
-      unreadInfo = {
-        count: unreadMsgs.length,
-        firstUnreadId: unreadMsgs[0].id,
-        sinceTs: lastRead
-      };
-    }
-
-    // 현재 채널을 "읽음" 상태로 표시 (신규 구분선/배너 제거 + 마지막 읽은 시각 갱신)
-    function markChannelAsRead(channel) {
-      lastReadTimestamps[channel] = Date.now();
-      saveLastReadTimestamps();
-      unreadInfo = null;
-      unreadBanner.classList.remove('active');
-    }
-
-    // 창에 포커스가 돌아오면(사용자가 현재 보고 있던 채널을 계속 보는 상태이므로)
-    // 현재 채널을 읽음 처리함
-    window.addEventListener('focus', () => {
-      if (currentUser && currentChannel) {
-        markChannelAsRead(currentChannel);
-      }
-    });
-
-    // 사용자가 메시지 목록을 스크롤해서 맨 아래(최신 메시지)까지 내려보면
-    // 읽음 처리함 (신규 구분선/배너가 계속 남아있지 않도록)
-    messagesDiv.addEventListener('scroll', () => {
-      if (!unreadInfo) return;
-      const distanceFromBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight;
-      if (distanceFromBottom < 30) {
-        markChannelAsRead(currentChannel);
-      }
-    });
-
-    // 상단 안내 배너를 클릭하면 "신규" 구분선 위치로 스크롤 이동
-    unreadBanner.addEventListener('click', () => {
-      const dividerElem = messagesDiv.querySelector('.new-messages-divider');
-      if (dividerElem) {
-        dividerElem.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }
-    });
-
-    // --- DB 메시지 불러오기 ---
-    async function loadChannelHistory(channel) {
-      messagesDiv.innerHTML = '';
-      messageHistoryCache = [];
-      try {
-        const q = query(collection(db, "messages"), where("channel", "==", channel), orderBy("timestamp", "asc"));
-        const snapshot = await getDocs(q);
-        snapshot.forEach((docSnap) => {
-          const msg = docSnap.data();
-          msg.id = docSnap.id;
-          if (!messageHistoryCache.some(m => m.id === msg.id)) messageHistoryCache.push(msg);
-        });
-        messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
-        computeUnreadInfo(channel);
-        pendingScrollToUnread = !!unreadInfo;
-        redrawMessages();
-      } catch (e) { console.error("채팅 로드 오류:", e); }
-    }
-
-    // --- 메시지 전송 ---
-    document.getElementById('message-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = messageInput.value.trim();
-      if (!text || !currentUser) return;
-
-      // 메시지 최대 글자수(302자) 제한
-      if (text.length > MAX_MESSAGE_LENGTH) {
-        alert(`메시지는 최대 ${MAX_MESSAGE_LENGTH}자까지 입력할 수 있습니다. (현재 ${text.length}자)`);
-        return;
-      }
-
-      const now = new Date();
-      const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-      const dateStr = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${days[now.getDay()]}`;
-      
-      let hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const ampm = hours >= 12 ? '오후' : '오전';
-      hours = hours % 12 || 12;
-      const timeStr = `${ampm} ${hours}:${minutes}`;
-
-      let nickname = currentUser.customData?.displayName || currentUser.displayName || '익명';
-      let photoURL = currentUser.customData?.photoURL || null;
-
-      if (currentChannel === 'random') {
-        nickname = randomChannelNum;
-        photoURL = null;
-      }
-
-      const msgData = {
-        channel: currentChannel,
-        uid: currentUser.uid,
-        nickname: nickname,
-        photoURL: photoURL,
-        text: text,
-        date: dateStr,
-        time: timeStr,
-        timestamp: Date.now(),
-        isDeleted: false,
-        replyTo: replyTarget ? { id: replyTarget.id, author: replyTarget.author, content: replyTarget.content } : null
-      };
-
-      try {
-        const docRef = await addDoc(collection(db, "messages"), msgData);
-        msgData.id = docRef.id;
-        socket.emit('chat message', msgData);
-        messageInput.value = '';
-        clearReplyTarget();
-      } catch (err) { console.error("전송 에러:", err); }
-    });
-
-    // --- 소켓 수신 ---
-    socket.on('chat message', (msg) => {
-      if (msg.channel === currentChannel) {
-        if (!msg.id) msg.id = 'temp_' + Date.now();
-        if (!messageHistoryCache.some(m => m.id === msg.id)) {
-          // 새 메시지가 추가되기 전, 사용자가 이미 스크롤 맨 아래에 있는지 확인
-          // (메시지가 추가되면 scrollHeight가 커지므로 미리 판단해야 함)
-          const wasAtBottom = (messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight) < 30;
-
-          messageHistoryCache.push(msg);
-          messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
-
-          const isFromOther = currentUser && msg.uid !== currentUser.uid;
-
-          if (isFromOther) {
-            // 타인이 보낸 메시지이고 창이 포커스되어 있지 않다면 타이틀에 카운트 표시
-            if (!document.hasFocus()) {
-              unreadCount++;
-              document.title = `(${unreadCount}) Chat`;
-            }
-
-            if (document.hasFocus() && wasAtBottom) {
-              // 창에 포커스가 있고 이미 맨 아래를 보고 있었다면, 방금 도착한
-              // 메시지도 바로 읽은 것으로 간주 (신규 표시를 띄우지 않음)
-              lastReadTimestamps[currentChannel] = msg.timestamp || Date.now();
-              saveLastReadTimestamps();
-              unreadInfo = null;
-            } else if (unreadInfo) {
-              // 이미 안 읽은 메시지가 있던 상태라면 개수만 증가 (구분선 위치는 유지)
-              unreadInfo.count++;
-            } else {
-              // 처음으로 안 읽은 메시지가 발생한 경우: 구분선을 이 메시지 위치에 표시
-              unreadInfo = {
-                count: 1,
-                firstUnreadId: msg.id,
-                sinceTs: lastReadTimestamps[currentChannel] || Date.now()
-              };
-            }
-          }
-
-          redrawMessages();
-        }
-      }
-    });
-
-    socket.on('delete message', (data) => {
-      if (data.channel === currentChannel) {
-        const cachedMsg = messageHistoryCache.find(m => m.id === data.id);
-        if (cachedMsg) {
-          cachedMsg.isDeleted = true;
-          cachedMsg.text = "삭제된 메시지입니다.";
-          redrawMessages();
-        }
-      }
-    });
-
-    socket.on('edit message', (data) => {
-      if (data.channel === currentChannel) {
-        const cachedMsg = messageHistoryCache.find(m => m.id === data.id);
-        if (cachedMsg && !cachedMsg.isDeleted) {
-          cachedMsg.text = data.text;
-          cachedMsg.isEdited = true;
-          redrawMessages();
-        }
-      }
-    });
-
-    // --- 우클릭 삭제 처리 ---
-    messagesDiv.addEventListener('contextmenu', (e) => {
-      const row = e.target.closest('.message-row.mine');
-      if (row) {
-        const bubble = row.querySelector('.message-bubble');
-        if (bubble && !bubble.classList.contains('deleted')) {
-          e.preventDefault();
-          selectedMessageId = row.dataset.id;
-          contextMenu.style.top = `${e.pageY}px`;
-          contextMenu.style.left = `${e.pageX}px`;
-          contextMenu.style.display = 'block';
-        }
-      }
-    });
-
-    document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
-
-    document.getElementById('delete-btn').addEventListener('click', async () => {
-      if (!selectedMessageId) return;
-      try {
-        const msgRef = doc(db, "messages", selectedMessageId);
-        await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다." });
-
-        const cachedMsg = messageHistoryCache.find(m => m.id === selectedMessageId);
-        if (cachedMsg) {
-          cachedMsg.isDeleted = true;
-          cachedMsg.text = "삭제된 메시지입니다.";
-          redrawMessages();
-        }
-        socket.emit('delete message', { id: selectedMessageId, channel: currentChannel });
-      } catch (err) { console.error("삭제 실패:", err); }
-      contextMenu.style.display = 'none';
-    });
-
-    // --- 메시지 수정(edit) 처리 ---
-    editBtn.addEventListener('click', () => {
-      if (!selectedMessageId) return;
-      startEditingMessage(selectedMessageId);
-      contextMenu.style.display = 'none';
-    });
-
-    function startEditingMessage(messageId) {
-      const row = messagesDiv.querySelector(`.message-row[data-id="${messageId}"]`);
-      const cachedMsg = messageHistoryCache.find(m => m.id === messageId);
-      if (!row || !cachedMsg || cachedMsg.isDeleted) return;
-
-      const content = row.querySelector('.message-content');
-      const bubble = row.querySelector('.message-bubble');
-      if (!content || !bubble) return;
-
-      // 말풍선과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준 폭을 CSS(.edit-textarea)로
-      // 지정하므로, 여기서 픽셀 폭을 계산해 강제로 지정하지 않음. (픽셀 값을 강제
-      // 지정하면 부모 폭보다 커져 채팅창 우측 벽을 넘어가는 오버플로우가 발생할 수 있음)
-      const editBox = document.createElement('div');
-      editBox.className = 'message-edit-box';
-      editBox.innerHTML = `
-        <textarea class="edit-textarea" rows="1" maxlength="${MAX_MESSAGE_LENGTH}"></textarea>
-        <div class="message-edit-actions">
-          <span>Esc 취소 &middot; Enter 저장</span>
-          <button type="button" class="message-edit-save">저장</button>
-          <button type="button" class="message-edit-cancel">취소</button>
-        </div>
-      `;
-
-      bubble.style.display = 'none';
-      content.appendChild(editBox);
-
-      const textarea = editBox.querySelector('.edit-textarea');
-      textarea.value = cachedMsg.text || '';
-      textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-      autoResizeTextarea(textarea);
-
-      textarea.addEventListener('input', () => autoResizeTextarea(textarea));
-
-      function cleanup() {
-        editBox.remove();
-        bubble.style.display = '';
-      }
-
-      async function saveEdit() {
-        const newText = textarea.value.trim();
-        if (!newText) { cleanup(); return; }
-        if (newText === cachedMsg.text) { cleanup(); return; }
-        try {
-          const msgRef = doc(db, "messages", messageId);
-          await updateDoc(msgRef, { text: newText, isEdited: true });
-          cachedMsg.text = newText;
-          cachedMsg.isEdited = true;
-          socket.emit('edit message', { id: messageId, channel: currentChannel, text: newText });
-          redrawMessages();
-        } catch (err) {
-          console.error("수정 실패:", err);
-          cleanup();
-        }
-      }
-
-      editBox.querySelector('.message-edit-save').addEventListener('click', saveEdit);
-      editBox.querySelector('.message-edit-cancel').addEventListener('click', cleanup);
-      textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          saveEdit();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          cleanup();
-        }
-      });
-    }
-
-    function autoResizeTextarea(textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    // 줄바꿈 기준 글자수 (30자) : 이 글자수를 넘으면 강제로 줄바꿈(개행)을 삽입함
-    const LINE_WRAP_LENGTH = 30;
-    // 메시지 최대 글자수 (302자) : 전송 가능한 메시지의 최대 길이
-    const MAX_MESSAGE_LENGTH = 302;
-
-    // 텍스트를 LINE_WRAP_LENGTH(30자) 단위로 줄바꿈 처리.
-    // 이미 사용자가 입력한 개행(\n)이 있다면 그 줄 단위로 먼저 나눈 뒤,
-    // 각 줄이 30자를 넘으면 그 줄 안에서도 30자마다 다시 줄바꿈함.
-    function insertLineBreaks(text, limit = LINE_WRAP_LENGTH) {
-      if (!text) return '';
-      return text.split('\n').map((line) => {
-        if (line.length <= limit) return line;
-        const chunks = [];
-        for (let i = 0; i < line.length; i += limit) {
-          chunks.push(line.slice(i, i + limit));
-        }
-        return chunks.join('\n');
-      }).join('\n');
-    }
-
-    // --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
-    function redrawMessages() {
-      messagesDiv.innerHTML = '';
-      lastDateStr = null;
-      lastSenderId = null;
-      lastMinuteStr = null;
-      lastTimeElem = null;
-
-      // 신규 구분선(디스코드 스타일)이 실제로 그려졌는지 추적 (스크롤 위치 결정용)
-      let newDividerElem = null;
-
-      // 상단 "읽지 않은 메시지" 안내 배너 갱신
-      if (unreadInfo && unreadInfo.count > 0) {
-        unreadBanner.innerHTML = `<b>${formatTimeForBanner(unreadInfo.sinceTs)}</b> 이후로 읽지 않은 메시지가 <b>${unreadInfo.count}</b>개 있어요`;
-        unreadBanner.classList.add('active');
-      } else {
-        unreadBanner.classList.remove('active');
-      }
-
-      messageHistoryCache.forEach((msg) => {
-        const isMine = currentUser && (msg.uid === currentUser.uid);
-        const isRandom = (msg.channel === 'random');
-
-        if (msg.date !== lastDateStr) {
-          lastDateStr = msg.date;
-          const divider = document.createElement('div');
-          divider.className = 'date-divider';
-          divider.innerHTML = `<span>${msg.date}</span>`;
-          messagesDiv.appendChild(divider);
-          lastSenderId = null;
-        }
-
-        // 안 읽은 첫 메시지 바로 위에 "신규" 구분선을 삽입 (디스코드 스타일)
-        if (unreadInfo && msg.id === unreadInfo.firstUnreadId) {
-          const newDivider = document.createElement('div');
-          newDivider.className = 'new-messages-divider';
-          newDivider.innerHTML = `<span class="new-messages-badge">신규</span>`;
-          messagesDiv.appendChild(newDivider);
-          newDividerElem = newDivider;
-          // 구분선으로 시각적으로 분리되었으므로, 날짜 구분선과 동일하게
-          // 그룹핑을 리셋하여 구분선 아래 메시지에는 아바타/닉네임이 다시 표시되도록 함
-          lastSenderId = null;
-        }
-
-        const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
-
-        // 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
-        // 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
-        // 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
-        if (isConsecutive && lastTimeElem) {
-          lastTimeElem.style.display = 'none';
-        }
-
-        const row = document.createElement('div');
-        row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
-        row.dataset.id = msg.id;
-
-        // 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
-        if (!isMine) {
-          const avatar = document.createElement('div');
-          avatar.className = 'avatar';
-          if (!isConsecutive) {
-            if (isRandom) {
-              avatar.innerText = msg.nickname;
-            } else if (msg.photoURL) {
-              avatar.innerHTML = `<img src="${msg.photoURL}" alt="avatar">`;
-            } else {
-              avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
-            }
-          } else {
-            avatar.style.visibility = 'hidden';
-            avatar.style.height = '0';
-          }
-          row.appendChild(avatar);
-        }
-
-        // 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
-        let timeDiv = null;
-        if (isMine) {
-          timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
-
-        // 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
-        const content = document.createElement('div');
-        content.className = 'message-content';
-
-        if (msg.replyTo && !msg.isDeleted) {
-          const replyQuote = document.createElement('div');
-          replyQuote.className = 'reply-quote';
-          replyQuote.innerHTML = `<span class="reply-quote-author">@${escapeHtml(msg.replyTo.author)}</span> <span class="reply-quote-text">${escapeHtml(msg.replyTo.content)}</span>`;
-          content.appendChild(replyQuote);
-        }
-
-        if (!isMine && !isConsecutive) {
-          const header = document.createElement('div');
-          header.className = 'message-header';
-          header.innerText = msg.nickname;
-          content.appendChild(header);
-        }
-
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        // 줄바꿈 기준은 글자 수(30자, LINE_WRAP_LENGTH)이며 insertLineBreaks()가
-        // 렌더링 시점에 텍스트에 개행문자를 삽입하므로, 화면 폭 계산/고정(lock)
-        // 처리가 필요 없음. 항상 30자 지점에서 동일하게 줄바꿈됨.
-
-        if (msg.isDeleted) {
-          bubble.classList.add('deleted');
-          bubble.innerHTML = `<span style="font-size:13px; opacity:0.7;"></span> 삭제된 메시지입니다.`;
-        } else {
-          // 줄바꿈 기준 글자수(30자)에 맞춰 강제 개행 삽입 후 표시
-          bubble.innerText = insertLineBreaks(msg.text || '');
-          if (msg.isEdited) {
-            const editedTag = document.createElement('span');
-            editedTag.className = 'edited-tag';
-            editedTag.innerText = '(수정됨)';
-            bubble.appendChild(editedTag);
-          }
-        }
-        content.appendChild(bubble);
-        row.appendChild(content);
-
-        // 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
-        if (!isMine) {
-          timeDiv = document.createElement('div');
-          timeDiv.className = 'timestamp';
-          timeDiv.innerText = msg.time;
-          row.appendChild(timeDiv);
-        }
-
-        // 5. 호버 답장 버튼 추가
-        if (!msg.isDeleted) {
-          const hoverActions = document.createElement('div');
-          hoverActions.className = 'message-hover-actions';
-          hoverActions.innerHTML = `<button class="action-btn hover-reply-btn" title="답장"><i class="fa-solid fa-reply"></i> 답장</button>`;
-          
-          hoverActions.querySelector('.hover-reply-btn').addEventListener('click', () => {
-            setReplyTarget(msg);
-          });
-          
-          row.appendChild(hoverActions);
-        }
-
-        messagesDiv.appendChild(row);
-
-        lastTimeElem = timeDiv;
-        lastSenderId = msg.uid;
-        lastMinuteStr = msg.time;
-      });
-
-      // 채널을 새로 열었을 때 안 읽은 메시지가 있다면, 맨 아래가 아니라
-      // "신규" 구분선이 화면 상단 근처에 보이도록 스크롤 위치를 맞춤
-      // (디스코드처럼 안 읽은 첫 메시지부터 확인할 수 있도록 함).
-      if (pendingScrollToUnread && newDividerElem) {
-        pendingScrollToUnread = false;
-        newDividerElem.scrollIntoView({ block: 'start' });
-      } else {
-        pendingScrollToUnread = false;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
-    }
-  </script>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const socket = io({ transports: ['websocket'] });
+
+let isLoginMode = true;
+let currentUser = null;
+let selectedImageBase64 = null;
+
+let currentChannel = 'general';
+const randomChannelNum = String(Math.floor(Math.random() * 999) + 1);
+
+// 렌더링용 변수
+let messageHistoryCache = [];
+let lastDateStr = null;
+let lastSenderId = null;
+let lastMinuteStr = null;
+let lastTimeElem = null;
+
+// 답장 관리용 변수
+let replyTarget = null;
+let selectedMessageId = null;
+
+// 안 읽은 메시지 수 관리 (타인 메시지 기준)
+let unreadCount = 0;
+window.addEventListener('focus', () => {
+unreadCount = 0;
+document.title = "Chat";
+});
+
+// DOM 요소
+const authContainer = document.getElementById('auth-container');
+const appContainer = document.getElementById('app-container');
+const messagesDiv = document.getElementById('messages');
+const messageInput = document.getElementById('message-input');
+
+const replyPreviewBar = document.getElementById('reply-preview-bar');
+const replyTargetName = document.getElementById('reply-target-name');
+const replyTargetText = document.getElementById('reply-target-text');
+const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+const contextMenu = document.getElementById('context-menu');
+const editBtn = document.getElementById('edit-btn');
+
+// --- 사이드바 드래그 리사이저 ---
+const sidebar = document.getElementById('sidebar');
+const resizer = document.getElementById('sidebar-resizer');
+let isResizing = false;
+let rafId = null;
+
+resizer.addEventListener('mousedown', (e) => {
+isResizing = true;
+resizer.classList.add('resizing');
+document.body.style.cursor = 'ew-resize';
+e.preventDefault();
+});
+window.addEventListener('mousemove', (e) => {
+if (!isResizing) return;
+if (rafId) cancelAnimationFrame(rafId);
+rafId = requestAnimationFrame(() => {
+const newWidth = e.clientX;
+if (newWidth >= 180 && newWidth <= 400) {
+sidebar.style.flex = "none";
+sidebar.style.width = newWidth + 'px';
+}
+});
+});
+window.addEventListener('mouseup', () => {
+if (isResizing) {
+isResizing = false;
+resizer.classList.remove('resizing');
+document.body.style.cursor = 'default';
+}
+});
+
+// --- 인증 (로그인/회원가입) ---
+document.getElementById('toggle-mode-btn').addEventListener('click', () => {
+isLoginMode = !isLoginMode;
+document.getElementById('auth-title').innerText = isLoginMode ? "로그인" : "회원가입";
+document.getElementById('auth-action-btn').innerText = isLoginMode ? "로그인" : "회원가입 완료";
+document.getElementById('toggle-mode-btn').innerText = isLoginMode ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인";
+document.getElementById('nickname-input').style.display = isLoginMode ? "none" : "block";
+});
+
+document.getElementById('auth-action-btn').addEventListener('click', async () => {
+const email = document.getElementById('email-input').value.trim();
+const pw = document.getElementById('password-input').value.trim();
+const nick = document.getElementById('nickname-input').value.trim();
+
+if (!email || !pw || (!isLoginMode && !nick)) return alert('모든 필드를 입력해주세요.');
+try {
+if (isLoginMode) {
+await signInWithEmailAndPassword(auth, email, pw);
+} else {
+const cred = await createUserWithEmailAndPassword(auth, email, pw);
+await updateProfile(cred.user, { displayName: nick });
+await setDoc(doc(db, "users", cred.user.uid), { displayName: nick, photoURL: null });
+await auth.currentUser.reload();
+alert('가입 완료!');
+}
+} catch (e) { alert('오류: ' + e.message); }
+});
+
+onAuthStateChanged(auth, async (user) => {
+if (user) {
+currentUser = user;
+try {
+const userDoc = await getDoc(doc(db, "users", user.uid));
+if (userDoc.exists()) currentUser.customData = userDoc.data();
+else currentUser.customData = { displayName: user.displayName, photoURL: user.photoURL };
+} catch (e) { currentUser.customData = {}; }
+
+authContainer.style.display = 'none';
+appContainer.style.display = 'flex';
+updateUserUI(currentUser);
+loadChannelHistory(currentChannel);
+} else {
+currentUser = null;
+appContainer.style.display = 'none';
+authContainer.style.display = 'flex';
+messagesDiv.innerHTML = '';
+}
+});
+
+function updateUserUI(user) {
+const nameElem = document.getElementById('sidebar-nickname');
+const avatarElem = document.getElementById('sidebar-avatar');
+const name = user.customData?.displayName || user.displayName || '익명';
+const photo = user.customData?.photoURL || user.photoURL;
+
+nameElem.innerText = name;
+if (photo) {
+avatarElem.innerHTML = `<img src="${photo}" alt="profile">`;
+} else {
+avatarElem.innerHTML = (name ? name[0] : '유').toUpperCase();
+}
+}
+
+// --- 설정 모달 ---
+const settingsModal = document.getElementById('settings-modal');
+const openSettingsBtn = document.getElementById('open-settings-btn');
+const closeSettingsBtn = document.getElementById('close-settings-btn');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+const modalLogoutBtn = document.getElementById('modal-logout-btn');
+const fileInput = document.getElementById('setting-file-input');
+const fileLabelText = document.getElementById('file-label-text');
+
+openSettingsBtn.addEventListener('click', () => {
+if (!currentUser) return;
+document.getElementById('setting-nickname-input').value = currentUser.customData?.displayName || currentUser.displayName || '';
+document.getElementById('setting-password-input').value = '';
+const hasPhoto = currentUser.customData?.photoURL || currentUser.photoURL;
+fileLabelText.innerText = hasPhoto ? "기존 프로필 있음 (변경하려면 선택)" : "컴퓨터에서 이미지 선택...";
+selectedImageBase64 = hasPhoto || null;
+settingsModal.classList.add('show');
+});
+
+closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
+settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('show'); });
+
+fileInput.addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+fileLabelText.innerText = file.name;
+const reader = new FileReader();
+reader.onload = (upEvent) => { selectedImageBase64 = upEvent.target.result; };
+reader.readAsDataURL(file);
+});
+
+saveSettingsBtn.addEventListener('click', async () => {
+const newNick = document.getElementById('setting-nickname-input').value.trim();
+const newPassword = document.getElementById('setting-password-input').value.trim();
+try {
+const updateData = {};
+if (newNick) updateData.displayName = newNick;
+if (selectedImageBase64 !== undefined) updateData.photoURL = selectedImageBase64;
+
+if (Object.keys(updateData).length > 0) {
+await updateProfile(auth.currentUser, { displayName: newNick || auth.currentUser.displayName });
+await setDoc(doc(db, "users", auth.currentUser.uid), updateData, { merge: true });
+currentUser.customData = updateData;
+}
+if (newPassword) await updatePassword(auth.currentUser, newPassword);
+await auth.currentUser.reload();
+updateUserUI(currentUser);
+alert('변경사항이 저장되었습니다.');
+settingsModal.classList.remove('show');
+} catch (e) { alert('변경사항 저장 실패: ' + e.message); }
+});
+
+modalLogoutBtn.addEventListener('click', () => { settingsModal.classList.remove('show'); signOut(auth); });
+
+// --- 채널 변경 ---
+document.querySelectorAll('.channel-item').forEach(item => {
+item.addEventListener('click', (e) => {
+document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
+item.classList.add('active');
+currentChannel = item.getAttribute('data-channel');
+document.getElementById('current-channel-title').innerText = `# ${currentChannel}`;
+messageInput.placeholder = `#${currentChannel}에 메시지 보내기`;
+clearReplyTarget();
+loadChannelHistory(currentChannel);
+});
+});
+
+// --- 답장 상태 제어 ---
+function setReplyTarget(msgData) {
+if (!msgData || msgData.isDeleted) return;
+replyTarget = {
+id: msgData.id,
+author: msgData.nickname || '알 수 없음',
+content: msgData.text
+};
+replyTargetName.textContent = `@${replyTarget.author}`;
+replyTargetText.textContent = replyTarget.content;
+replyPreviewBar.classList.add('active');
+messageInput.focus();
+}
+
+function clearReplyTarget() {
+replyTarget = null;
+replyPreviewBar.classList.remove('active');
+}
+
+cancelReplyBtn.addEventListener('click', clearReplyTarget);
+
+// --- DB 메시지 불러오기 ---
+async function loadChannelHistory(channel) {
+messagesDiv.innerHTML = '';
+messageHistoryCache = [];
+try {
+const q = query(collection(db, "messages"), where("channel", "==", channel), orderBy("timestamp", "asc"));
+const snapshot = await getDocs(q);
+snapshot.forEach((docSnap) => {
+const msg = docSnap.data();
+msg.id = docSnap.id;
+if (!messageHistoryCache.some(m => m.id === msg.id)) messageHistoryCache.push(msg);
+});
+messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
+redrawMessages();
+} catch (e) { console.error("채팅 로드 오류:", e); }
+}
+
+// --- 메시지 전송 ---
+document.getElementById('message-form').addEventListener('submit', async (e) => {
+e.preventDefault();
+const text = messageInput.value.trim();
+if (!text || !currentUser) return;
+
+// 메시지 최대 글자수(302자) 제한
+if (text.length > MAX_MESSAGE_LENGTH) {
+alert(`메시지는 최대 ${MAX_MESSAGE_LENGTH}자까지 입력할 수 있습니다. (현재 ${text.length}자)`);
+return;
+}
+
+const now = new Date();
+const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const dateStr = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${days[now.getDay()]}`;
+
+let hours = now.getHours();
+const minutes = String(now.getMinutes()).padStart(2, '0');
+const ampm = hours >= 12 ? '오후' : '오전';
+hours = hours % 12 || 12;
+const timeStr = `${ampm} ${hours}:${minutes}`;
+
+let nickname = currentUser.customData?.displayName || currentUser.displayName || '익명';
+let photoURL = currentUser.customData?.photoURL || null;
+
+if (currentChannel === 'random') {
+nickname = randomChannelNum;
+photoURL = null;
+}
+
+const msgData = {
+channel: currentChannel,
+uid: currentUser.uid,
+nickname: nickname,
+photoURL: photoURL,
+text: text,
+date: dateStr,
+time: timeStr,
+timestamp: Date.now(),
+isDeleted: false,
+replyTo: replyTarget ? { id: replyTarget.id, author: replyTarget.author, content: replyTarget.content } : null
+};
+
+try {
+const docRef = await addDoc(collection(db, "messages"), msgData);
+msgData.id = docRef.id;
+socket.emit('chat message', msgData);
+messageInput.value = '';
+clearReplyTarget();
+} catch (err) { console.error("전송 에러:", err); }
+});
+
+// --- 소켓 수신 ---
+socket.on('chat message', (msg) => {
+if (msg.channel === currentChannel) {
+if (!msg.id) msg.id = 'temp_' + Date.now();
+if (!messageHistoryCache.some(m => m.id === msg.id)) {
+messageHistoryCache.push(msg);
+messageHistoryCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0) || (a.id || '').localeCompare(b.id || ''));
+
+// 타인이 보낸 메시지이고 창이 포커스되어 있지 않다면 타이틀에 카운트 표시
+if (currentUser && msg.uid !== currentUser.uid) {
+if (!document.hasFocus()) {
+unreadCount++;
+document.title = `(${unreadCount}) Chat`;
+}
+}
+
+redrawMessages();
+}
+}
+});
+
+socket.on('delete message', (data) => {
+if (data.channel === currentChannel) {
+const cachedMsg = messageHistoryCache.find(m => m.id === data.id);
+if (cachedMsg) {
+cachedMsg.isDeleted = true;
+cachedMsg.text = "삭제된 메시지입니다.";
+redrawMessages();
+}
+}
+});
+
+socket.on('edit message', (data) => {
+if (data.channel === currentChannel) {
+const cachedMsg = messageHistoryCache.find(m => m.id === data.id);
+if (cachedMsg && !cachedMsg.isDeleted) {
+cachedMsg.text = data.text;
+cachedMsg.isEdited = true;
+redrawMessages();
+}
+}
+});
+
+// --- 우클릭 삭제 처리 ---
+messagesDiv.addEventListener('contextmenu', (e) => {
+const row = e.target.closest('.message-row.mine');
+if (row) {
+const bubble = row.querySelector('.message-bubble');
+if (bubble && !bubble.classList.contains('deleted')) {
+e.preventDefault();
+selectedMessageId = row.dataset.id;
+contextMenu.style.top = `${e.pageY}px`;
+contextMenu.style.left = `${e.pageX}px`;
+contextMenu.style.display = 'block';
+}
+}
+});
+
+document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+
+document.getElementById('delete-btn').addEventListener('click', async () => {
+if (!selectedMessageId) return;
+try {
+const msgRef = doc(db, "messages", selectedMessageId);
+await updateDoc(msgRef, { isDeleted: true, text: "삭제된 메시지입니다." });
+
+const cachedMsg = messageHistoryCache.find(m => m.id === selectedMessageId);
+if (cachedMsg) {
+cachedMsg.isDeleted = true;
+cachedMsg.text = "삭제된 메시지입니다.";
+redrawMessages();
+}
+socket.emit('delete message', { id: selectedMessageId, channel: currentChannel });
+} catch (err) { console.error("삭제 실패:", err); }
+contextMenu.style.display = 'none';
+});
+
+// --- 메시지 수정(edit) 처리 ---
+editBtn.addEventListener('click', () => {
+if (!selectedMessageId) return;
+startEditingMessage(selectedMessageId);
+contextMenu.style.display = 'none';
+});
+
+function startEditingMessage(messageId) {
+const row = messagesDiv.querySelector(`.message-row[data-id="${messageId}"]`);
+const cachedMsg = messageHistoryCache.find(m => m.id === messageId);
+if (!row || !cachedMsg || cachedMsg.isDeleted) return;
+
+const content = row.querySelector('.message-content');
+const bubble = row.querySelector('.message-bubble');
+if (!content || !bubble) return;
+
+// 말풍선과 동일하게 글자 수(30자, LINE_WRAP_LENGTH) 기준 폭을 CSS(.edit-textarea)로
+// 지정하므로, 여기서 픽셀 폭을 계산해 강제로 지정하지 않음. (픽셀 값을 강제
+// 지정하면 부모 폭보다 커져 채팅창 우측 벽을 넘어가는 오버플로우가 발생할 수 있음)
+const editBox = document.createElement('div');
+editBox.className = 'message-edit-box';
+editBox.innerHTML = `
+       <textarea class="edit-textarea" rows="1" maxlength="${MAX_MESSAGE_LENGTH}"></textarea>
+       <div class="message-edit-actions">
+         <span>Esc 취소 &middot; Enter 저장</span>
+         <button type="button" class="message-edit-save">저장</button>
+         <button type="button" class="message-edit-cancel">취소</button>
+       </div>
+     `;
+
+bubble.style.display = 'none';
+content.appendChild(editBox);
+
+const textarea = editBox.querySelector('.edit-textarea');
+textarea.value = cachedMsg.text || '';
+textarea.focus();
+textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+autoResizeTextarea(textarea);
+
+textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+
+function cleanup() {
+editBox.remove();
+bubble.style.display = '';
+}
+
+async function saveEdit() {
+const newText = textarea.value.trim();
+if (!newText) { cleanup(); return; }
+if (newText === cachedMsg.text) { cleanup(); return; }
+try {
+const msgRef = doc(db, "messages", messageId);
+await updateDoc(msgRef, { text: newText, isEdited: true });
+cachedMsg.text = newText;
+cachedMsg.isEdited = true;
+socket.emit('edit message', { id: messageId, channel: currentChannel, text: newText });
+redrawMessages();
+} catch (err) {
+console.error("수정 실패:", err);
+cleanup();
+}
+}
+
+editBox.querySelector('.message-edit-save').addEventListener('click', saveEdit);
+editBox.querySelector('.message-edit-cancel').addEventListener('click', cleanup);
+textarea.addEventListener('keydown', (e) => {
+if (e.key === 'Enter' && !e.shiftKey) {
+e.preventDefault();
+saveEdit();
+} else if (e.key === 'Escape') {
+e.preventDefault();
+cleanup();
+}
+});
+}
+
+function autoResizeTextarea(textarea) {
+textarea.style.height = 'auto';
+textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+function escapeHtml(str) {
+if (!str) return '';
+return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// 줄바꿈 기준 글자수 (30자) : 이 글자수를 넘으면 강제로 줄바꿈(개행)을 삽입함
+const LINE_WRAP_LENGTH = 30;
+// 메시지 최대 글자수 (302자) : 전송 가능한 메시지의 최대 길이
+const MAX_MESSAGE_LENGTH = 302;
+
+// 텍스트를 LINE_WRAP_LENGTH(30자) 단위로 줄바꿈 처리.
+// 이미 사용자가 입력한 개행(\n)이 있다면 그 줄 단위로 먼저 나눈 뒤,
+// 각 줄이 30자를 넘으면 그 줄 안에서도 30자마다 다시 줄바꿈함.
+function insertLineBreaks(text, limit = LINE_WRAP_LENGTH) {
+if (!text) return '';
+return text.split('\n').map((line) => {
+if (line.length <= limit) return line;
+const chunks = [];
+for (let i = 0; i < line.length; i += limit) {
+chunks.push(line.slice(i, i + limit));
+}
+return chunks.join('\n');
+}).join('\n');
+}
+
+// --- 메시지 렌더링 (카카오톡 스타일 레이아웃 적용) ---
+function redrawMessages() {
+messagesDiv.innerHTML = '';
+lastDateStr = null;
+lastSenderId = null;
+lastMinuteStr = null;
+lastTimeElem = null;
+
+messageHistoryCache.forEach((msg) => {
+const isMine = currentUser && (msg.uid === currentUser.uid);
+const isRandom = (msg.channel === 'random');
+
+if (msg.date !== lastDateStr) {
+lastDateStr = msg.date;
+const divider = document.createElement('div');
+divider.className = 'date-divider';
+divider.innerHTML = `<span>${msg.date}</span>`;
+messagesDiv.appendChild(divider);
+lastSenderId = null;
+}
+
+const isConsecutive = (lastSenderId === msg.uid && lastMinuteStr === msg.time && !msg.replyTo);
+
+// 타임스탬프 묶기 기능: 내 메시지/타인 메시지 공통 로직.
+// 현재 메시지가 이전 메시지와 연속이면, 이전에 표시했던 타임스탬프를 숨겨서
+// 같은 그룹 안에서는 마지막 메시지에만 시간이 보이도록 함(양쪽 동일하게 동작).
+if (isConsecutive && lastTimeElem) {
+lastTimeElem.style.display = 'none';
+}
+
+const row = document.createElement('div');
+row.className = `message-row ${isMine ? 'mine' : 'other'} ${isConsecutive ? 'consecutive' : ''}`;
+row.dataset.id = msg.id;
+
+// 1. 타인이 보낸 경우: 아바타 먼저 배치 (내 메시지는 아바타 표시 안 함 - 디자인 유지)
+if (!isMine) {
+const avatar = document.createElement('div');
+avatar.className = 'avatar';
+if (!isConsecutive) {
+if (isRandom) {
+avatar.innerText = msg.nickname;
+} else if (msg.photoURL) {
+avatar.innerHTML = `<img src="${msg.photoURL}" alt="avatar">`;
+} else {
+avatar.innerText = (msg.nickname ? msg.nickname[0] : '유').toUpperCase();
+}
+} else {
+avatar.style.visibility = 'hidden';
+avatar.style.height = '0';
+}
+row.appendChild(avatar);
+}
+
+// 2. 내 메시지일 경우: 타임스탬프를 말풍선 왼쪽에 배치 (기존 디자인 유지)
+let timeDiv = null;
+if (isMine) {
+timeDiv = document.createElement('div');
+timeDiv.className = 'timestamp';
+timeDiv.innerText = msg.time;
+row.appendChild(timeDiv);
+}
+
+// 3. 메시지 내용 묶음 (닉네임 + 답장 인용문 + 버블)
+const content = document.createElement('div');
+content.className = 'message-content';
+
+if (msg.replyTo && !msg.isDeleted) {
+const replyQuote = document.createElement('div');
+replyQuote.className = 'reply-quote';
+replyQuote.innerHTML = `<span class="reply-quote-author">@${escapeHtml(msg.replyTo.author)}</span> <span class="reply-quote-text">${escapeHtml(msg.replyTo.content)}</span>`;
+content.appendChild(replyQuote);
+}
+
+if (!isMine && !isConsecutive) {
+const header = document.createElement('div');
+header.className = 'message-header';
+header.innerText = msg.nickname;
+content.appendChild(header);
+}
+
+const bubble = document.createElement('div');
+bubble.className = 'message-bubble';
+// 줄바꿈 기준은 글자 수(30자, LINE_WRAP_LENGTH)이며 insertLineBreaks()가
+// 렌더링 시점에 텍스트에 개행문자를 삽입하므로, 화면 폭 계산/고정(lock)
+// 처리가 필요 없음. 항상 30자 지점에서 동일하게 줄바꿈됨.
+
+if (msg.isDeleted) {
+bubble.classList.add('deleted');
+bubble.innerHTML = `<span style="font-size:13px; opacity:0.7;"></span> 삭제된 메시지입니다.`;
+} else {
+// 줄바꿈 기준 글자수(30자)에 맞춰 강제 개행 삽입 후 표시
+bubble.innerText = insertLineBreaks(msg.text || '');
+if (msg.isEdited) {
+const editedTag = document.createElement('span');
+editedTag.className = 'edited-tag';
+editedTag.innerText = '(수정됨)';
+bubble.appendChild(editedTag);
+}
+}
+content.appendChild(bubble);
+row.appendChild(content);
+
+// 4. 타인이 보낸 경우: 타임스탬프를 말풍선 오른쪽에 배치 (기존 디자인 유지)
+if (!isMine) {
+timeDiv = document.createElement('div');
+timeDiv.className = 'timestamp';
+timeDiv.innerText = msg.time;
+row.appendChild(timeDiv);
+}
+
+// 5. 호버 답장 버튼 추가
+if (!msg.isDeleted) {
+const hoverActions = document.createElement('div');
+hoverActions.className = 'message-hover-actions';
+hoverActions.innerHTML = `<button class="action-btn hover-reply-btn" title="답장"><i class="fa-solid fa-reply"></i> 답장</button>`;
+
+hoverActions.querySelector('.hover-reply-btn').addEventListener('click', () => {
+setReplyTarget(msg);
+});
+
+row.appendChild(hoverActions);
+}
+
+messagesDiv.appendChild(row);
+
+lastTimeElem = timeDiv;
+lastSenderId = msg.uid;
+lastMinuteStr = msg.time;
+});
+
+messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+</script>
 </body>
 </html>
-
