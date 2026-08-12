@@ -259,8 +259,22 @@
     .reply-quote {
       font-size: 12px; color: #949ba4; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
     }
-    .reply-quote::before { content: "↪"; font-weight: bold; color: #949ba4; }
-    .reply-quote-author { font-weight: 600; color: #dbdee1; }
+    /* 답장 화살표(↪)가 유니코드 특수문자라 브라우저/폰트에 따라 렌더링 높이가
+       본문 텍스트보다 훨씬 크게 잡히고, font-weight: bold까지 겹쳐 옆의
+       "@닉네임" 텍스트와 간격이 거의 없어 하나의 도형처럼 붙어 보이는
+       문제가 있었음. 화살표를 별도 인라인 요소로 분리해 닉네임 표시
+       글자(.message-header, 12px)보다도 훨씬 작은 크기(9px)로 줄이고,
+       font-weight도 normal로 낮추고, 좌우 여백(margin)을 명시적으로 두어
+       뒤따르는 텍스트와 시각적으로 확실히 분리되도록 함. */
+    .reply-quote::before {
+      content: "↪";
+      font-weight: normal;
+      font-size: 9px;
+      line-height: 1;
+      color: #949ba4;
+      flex-shrink: 0;
+    }
+    .reply-quote-author { font-weight: 600; color: #dbdee1; margin-left: 2px; }
     .reply-quote-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
 
     #reply-preview-bar {
@@ -431,8 +445,13 @@
      => top: 50% + transform: translateY(-50%) 로 배지의 실제 높이와
         무관하게 항상 배지의 "세로 중앙"에 삼각형이 오도록 수정하여,
         가로줄(구분선)과 삼각형 끝점이 항상 정확히 일치하게 함.
-   - 전체 크기도 소폭 축소(margin/font-size/padding/border-radius/
-     삼각형 크기)하여 어색하지 않게 조금 더 컴팩트하게 조정. */
+   - [추가 축소] 화살표(꼬리) 삼각형이 border-top/bottom 10px씩(세로
+     20px)으로 배지 높이(약 20px)와 거의 같아, 화살표가 별개의
+     "포인터"로 보이지 않고 배지와 하나로 뭉개진 도형처럼 붙어 보이는
+     문제가 있었음. 삼각형 크기를 절반(5px)까지 대폭 축소하여
+     닉네임 표시 글자 크기(.message-header, 12px)와 비슷한 스케일로
+     맞추고, 그에 맞춰 배지의 padding/margin/border-radius도 함께
+     줄여 화살표가 배지 옆에 작고 또렷한 "꼬리"로 보이도록 조정. */
 .new-messages-divider {
   display: flex;
   align-items: center;
@@ -453,27 +472,29 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
-  padding: 4px 12px 4px 9px;
+  padding: 3px 10px 3px 7px;
   white-space: nowrap;
   /* 좌측은 각지게, 우측은 필(pill) 형태로 둥글게 */
-  border-radius: 0 10px 10px 0;
-  /* 좌측 화살표(꼬리) 삼각형이 들어갈 공간 확보 */
-  margin-left: 10px;
+  border-radius: 0 8px 8px 0;
+  /* 좌측 화살표(꼬리) 삼각형이 들어갈 공간 확보 (삼각형 너비와 동일) */
+  margin-left: 5px;
 }
 /* 배지 좌측의 뾰족한 화살표(꼬리) 부분: border trick으로 좌측을 향한
    삼각형을 만들어 구분선과 배지가 하나로 이어지는 리본 모양을 구현.
    top: 50% + translateY(-50%)로 배지의 세로 중앙에 정확히 위치시켜
-   구분선(가로줄)과 삼각형 끝점이 항상 일치하도록 함. */
+   구분선(가로줄)과 삼각형 끝점이 항상 일치하도록 함.
+   삼각형 크기(5px)를 닉네임 글자 크기(12px) 수준으로 대폭 축소하여
+   배지 본체와 뭉개져 보이지 않고 작은 화살표로 또렷하게 구분되도록 함. */
 .new-messages-badge::before {
   content: '';
   position: absolute;
-  left: -10px;
+  left: -5px;
   top: 50%;
   width: 0;
   height: 0;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-right: 10px solid #e0323c;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid #e0323c;
   transform: translateY(-50%);
 }
  </style>
@@ -1367,3 +1388,4 @@
   </script>
 </body>
 </html>
+
