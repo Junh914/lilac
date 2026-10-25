@@ -441,6 +441,10 @@ color: #f2f3f5;
 <label>새 비밀번호 (변경시에만 입력)</label>
 <input type="password" id="setting-password-input" placeholder="변경할 비밀번호">
 </div>
+<div class="settings-group">
+<label>데스크톱 푸시 알림</label>
+<button type="button" class="file-upload-label" id="notify-toggle-btn" style="width:100%;text-align:left;cursor:pointer;">알림 상태 확인 중...</button>
+</div>
 <div class="settings-buttons">
 <button class="btn-logout-modal" id="modal-logout-btn">로그아웃</button>
 <button class="btn-save" id="save-settings-btn">저장</button>
@@ -545,6 +549,91 @@ unreadCount = 0;
 document.title = "Chat";
 });
 
+// --- 데스크톱 푸시 알림 (Web Notification API) ---
+const NOTIFY_PREF_KEY = 'lilac_notify_enabled';
+const notifySupported = typeof window !== 'undefined' && 'Notification' in window;
+const notifyToggleBtn = document.getElementById('notify-toggle-btn');
+
+function isNotifyEnabled() {
+return localStorage.getItem(NOTIFY_PREF_KEY) !== 'off';
+}
+
+function updateNotifyToggleUI() {
+if (!notifyToggleBtn) return;
+if (!notifySupported) {
+notifyToggleBtn.textContent = '이 브라우저는 알림을 지원하지 않습니다';
+notifyToggleBtn.disabled = true;
+return;
+}
+if (Notification.permission === 'denied') {
+notifyToggleBtn.textContent = '브라우저에서 알림이 차단됨 (주소창 설정에서 허용 필요)';
+return;
+}
+if (Notification.permission === 'default') {
+notifyToggleBtn.textContent = '🔔 알림 허용하기 (클릭)';
+return;
+}
+notifyToggleBtn.textContent = isNotifyEnabled() ? '🔔 알림 켜짐 (클릭하여 끄기)' : '🔕 알림 꺼짐 (클릭하여 켜기)';
+}
+
+async function requestNotifyPermission() {
+if (!notifySupported) return 'unsupported';
+if (Notification.permission === 'granted') return 'granted';
+if (Notification.permission === 'denied') return 'denied';
+try {
+const result = await Notification.requestPermission();
+return result;
+} catch (e) {
+console.warn('알림 권한 요청 실패:', e);
+return 'error';
+} finally {
+updateNotifyToggleUI();
+}
+}
+
+if (notifyToggleBtn) {
+notifyToggleBtn.addEventListener('click', async () => {
+if (!notifySupported) return;
+if (Notification.permission !== 'granted') {
+const res = await requestNotifyPermission();
+if (res === 'granted') localStorage.setItem(NOTIFY_PREF_KEY, 'on');
+} else {
+localStorage.setItem(NOTIFY_PREF_KEY, isNotifyEnabled() ? 'off' : 'on');
+}
+updateNotifyToggleUI();
+});
+}
+
+function showDesktopNotification(msg) {
+if (!notifySupported || Notification.permission !== 'granted' || !isNotifyEnabled()) return;
+// 창이 포커스되어 있고 같은 채널을 보고 있다면 알림을 띄우지 않음
+if (document.hasFocus() && document.visibilityState === 'visible' && msg.channel === currentChannel) return;
+
+const channelLabel = msg.channel ? `#${msg.channel}` : '';
+const title = `${msg.nickname || '익명'} ${channelLabel}`.trim();
+let body = msg.text || '';
+if (body.length > 120) body = body.slice(0, 120) + '…';
+if (!body) body = '새 메시지가 도착했습니다.';
+
+try {
+const n = new Notification(title, {
+body: body,
+icon: msg.photoURL || '/setting-icon.png',
+tag: `lilac-msg-${msg.id || Date.now()}`,
+silent: false
+});
+n.onclick = () => {
+window.focus();
+n.close();
+};
+setTimeout(() => n.close(), 8000);
+} catch (e) {
+console.warn('알림 표시 실패:', e);
+}
+}
+
+updateNotifyToggleUI();
+
 // DOM 요소
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
@@ -630,6 +719,12 @@ authContainer.style.display = 'none';
 appContainer.style.display = 'flex';
 updateUserUI(currentUser);
 loadChannelHistory(currentChannel);
+// 로그인 후 알림 권한이 아직 결정되지 않았다면 권한 요청
+if (notifySupported && Notification.permission === 'default') {
+requestNotifyPermission().then((res) => {
+if (res === 'granted') localStorage.setItem(NOTIFY_PREF_KEY, 'on');
+});
+}
 } else {
 currentUser = null;
 appContainer.style.display = 'none';
@@ -811,6 +906,11 @@ clearReplyTarget();
 
 // --- 소켓 수신 ---
 socket.on('chat message', (msg) => {
+// 타인이 보낸 메시지라면 (채널과 무관하게) 데스크톱 푸시 알림 표시
+if (currentUser && msg.uid !== currentUser.uid) {
+showDesktopNotification(msg);
+}
+
 if (msg.channel === currentChannel) {
 if (!msg.id) msg.id = 'temp_' + Date.now();
 if (!messageHistoryCache.some(m => m.id === msg.id)) {
